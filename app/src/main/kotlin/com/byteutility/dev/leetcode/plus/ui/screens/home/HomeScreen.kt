@@ -58,6 +58,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -206,7 +207,8 @@ fun HomeLayout(
                      */
                     Text(
                         text = "Home",
-                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.SemiBold,
                         modifier = Modifier.clickable {
                             val currentTime = System.currentTimeMillis()
                             if (currentTime - lastClickTime <= 1000) {
@@ -246,11 +248,10 @@ fun HomeLayout(
                     }
                     LogoutButton({ showLogoutDialog = true }, uiState.userBasicInfo.avatar)
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFFABDEF5).copy(
-                        alpha = 0.1f
-                    )
-                )
+                colors = TopAppBarDefaults.mediumTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    scrolledContainerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
+                ),
             )
         }
     ) { paddingValues ->
