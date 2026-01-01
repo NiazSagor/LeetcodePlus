@@ -5,12 +5,6 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.CalendarContract
 import androidx.compose.animation.Crossfade
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -21,7 +15,6 @@ import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -45,17 +38,17 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.surfaceColorAtElevation
@@ -71,10 +64,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -228,25 +220,16 @@ fun HomeLayout(
                         })
                 },
                 actions = {
-                    OutlinedButton(
-                        onClick = {
-                            if (uiState.isWeeklyGoalSet) {
-                                onGoalStatus()
-                            } else {
-                                onSetGoal()
-                            }
-                        },
-                        modifier = Modifier.padding(end = 12.dp),
-                        border = BorderStroke(1.dp, Color.Gray),
-                        shape = RoundedCornerShape(8.dp)
+                    TextButton(
+                        onClick = { if (uiState.isWeeklyGoalSet) onGoalStatus() else onSetGoal() },
+                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.primary)
                     ) {
                         Text(
-                            text = if (uiState.isWeeklyGoalSet) "See Goal Status" else "Set Goal",
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold,
+                            text = if (uiState.isWeeklyGoalSet) "Status" else "Set Goal",
+                            style = MaterialTheme.typography.labelLarge
                         )
                     }
-                    LogoutButton({ showLogoutDialog = true }, uiState.userBasicInfo.avatar)
+                    ProfileAvatar(uiState.userBasicInfo.avatar) { showLogoutDialog = true }
                 },
                 colors = TopAppBarDefaults.mediumTopAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface,
@@ -277,56 +260,31 @@ fun HomeLayout(
                     checkInAppContestReminderStatus = checkInAppContestReminderStatus,
                     onNavigateToContestDetail = onNavigateToContestDetail
                 )
-                val infiniteTransition = rememberInfiniteTransition(label = "fab_animation")
-                val scale by infiniteTransition.animateFloat(
-                    initialValue = 1f,
-                    targetValue = 1.3f,
-                    animationSpec = infiniteRepeatable(
-                        animation = tween(1000),
-                        repeatMode = RepeatMode.Reverse
-                    ), label = "fab_scale"
-                )
-
-                Column(
-                    modifier = Modifier.align(Alignment.CenterEnd),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    FloatingActionButton(
-                        onClick = {
-                            onNavigateToAllProblems.invoke()
-                        },
-                        modifier = Modifier
-                            .size(74.dp)
-                            .scale(scale)
-                            .padding(16.dp)
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_problems),
-                            contentDescription = "All Problems",
-                        )
-                    }
-                    Box(
-                        modifier = Modifier
-                            .background(
-                                brush = Brush.horizontalGradient(
-                                    colors = listOf(Color(0xFF6dd5ed), Color(0xFF2193b0))
-                                ),
-                                shape = RoundedCornerShape(8.dp)
-                            )
-                            .padding(horizontal = 8.dp, vertical = 4.dp)
-                    ) {
-                        Text(
-                            text = "All Problems",
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White,
-                            modifier = Modifier.clickable {
-                                onNavigateToAllProblems.invoke()
-                            },
-                        )
-                    }
-                }
             }
         }
+    }
+}
+
+@Composable
+fun ProfileAvatar(
+    model: String,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .padding(end = 16.dp, start = 8.dp)
+            .size(32.dp) // Standard M3 small avatar size
+            .clip(CircleShape)
+            .clickable { onClick() },
+        contentAlignment = Alignment.Center
+    ) {
+        AsyncImage(
+            model = model,
+            placeholder = painterResource(R.drawable.profile_placeholder),
+            contentDescription = "Profile",
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+        )
     }
 }
 
@@ -501,80 +459,70 @@ fun UserProblemCategoryStats(
 
 @Composable
 fun UserProfileCard(user: UserBasicInfo) {
-    val gradientBrush = Brush.horizontalGradient(
-        colors = listOf(Color(0xFF4CAF50), Color.LightGray)
-    )
+    val brandGreen = Color(0xFF498A5C)
+    val lightGreenBackground = brandGreen.copy(alpha = 0.05f)
 
-    Card(
+    Box(
         modifier = Modifier
             .padding(4.dp)
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+            .background(color = lightGreenBackground, shape = RoundedCornerShape(16.dp))
+            .border(1.dp, brandGreen.copy(alpha = 0.15f), RoundedCornerShape(16.dp)),
     ) {
-        Box(
+        Row(
             modifier = Modifier
-                .fillMaxWidth()
-                .background(gradientBrush)
-                .padding(16.dp)
+                .padding(20.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
+            // 1. Elevated Avatar with Brand Ring
+            Box(contentAlignment = Alignment.Center) {
+                Surface(
+                    shape = CircleShape,
+                    color = brandGreen.copy(alpha = 0.1f),
+                    modifier = Modifier.size(72.dp)
+                ) {}
                 AsyncImage(
                     model = user.avatar,
                     placeholder = painterResource(R.drawable.profile_placeholder),
                     contentDescription = "User avatar",
+                    contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .size(64.dp)
                         .clip(CircleShape)
-                        .border(2.dp, Color.White, CircleShape)
+                        .border(1.5.dp, brandGreen, CircleShape)
+                )
+            }
+
+            // 2. Info Column
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = user.name,
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
 
-                Column(
-                    modifier = Modifier.fillMaxHeight(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = user.name,
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                        color = Color.White,
-                        overflow = TextOverflow.Ellipsis,
-                        maxLines = 1
-                    )
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Public,
-                            contentDescription = "Country",
-                            tint = Color.White,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Text(
-                            text = "Country: ${user.country}",
-                            style = MaterialTheme.typography.bodyMedium.copy(color = Color.White),
-                        )
-                    }
+                Spacer(modifier = Modifier.height(8.dp))
 
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Star,
-                            contentDescription = "Ranking",
-                            tint = Color.Yellow,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Text(
-                            text = "Ranking: ${user.ranking}",
-                            style = MaterialTheme.typography.bodyMedium.copy(color = Color.White),
-                        )
-                    }
+                // Metadata Chips
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    ProfileBadge(
+                        icon = Icons.Default.Public,
+                        text = user.country,
+                        brandGreen = brandGreen
+                    )
+                    ProfileBadge(
+                        icon = Icons.Default.Star,
+                        text = "#${user.ranking}",
+                        brandGreen = brandGreen
+                    )
                 }
             }
         }
@@ -582,109 +530,134 @@ fun UserProfileCard(user: UserBasicInfo) {
 }
 
 @Composable
-fun LogoutButton(
-    onLogout: () -> Unit,
-    avatar: String
+private fun ProfileBadge(
+    icon: ImageVector,
+    text: String,
+    brandGreen: Color
 ) {
-    val gradientBrush = Brush.horizontalGradient(
-        colors = listOf(Color(0xFFE91E63), Color(0xFFFFC107))
-    )
-    Box(
-        modifier = Modifier
-            .padding(end = 16.dp)
-            .size(40.dp)
-            .clip(CircleShape)
-            .background(gradientBrush)
-            .clickable { onLogout() },
-        contentAlignment = Alignment.Center
+    Surface(
+        shape = RoundedCornerShape(8.dp),
+        color = brandGreen.copy(alpha = 0.1f),
+        contentColor = brandGreen
     ) {
-        AsyncImage(
-            model = avatar,
-            placeholder = painterResource(R.drawable.profile_placeholder),
-            contentDescription = "User avatar",
-            modifier = Modifier
-                .size(36.dp)
-                .clip(CircleShape)
-        )
+        Row(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(14.dp)
+            )
+            Text(
+                text = text,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold
+            )
+        }
     }
 }
 
 @Composable
 fun UserStatisticsCard(user: UserContestInfo) {
-    val gradientBrush = Brush.horizontalGradient(
-        colors = listOf(Color(0xFF4CAF50), Color.LightGray)
-    )
+    // We derive a soft green from your brand color for the card background
+    val brandGreen = Color(0xFF498A5C)
+    val lightGreenBackground = brandGreen.copy(alpha = 0.05f)
 
-    Card(
+    Box(
         modifier = Modifier
             .padding(4.dp)
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp)),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.White
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+            .background(color = lightGreenBackground, shape = RoundedCornerShape(16.dp))
+            .border(1.dp, brandGreen.copy(alpha = 0.15f), RoundedCornerShape(16.dp)),
     ) {
-        Box(
+        Column(
             modifier = Modifier
-                .background(gradientBrush)
-                .padding(16.dp)
+                .padding(20.dp)
+                .fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Star,
-                        contentDescription = "Rating",
-                        tint = Color.Yellow,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Text(
-                        text = "Contest Rating: ${String.format("%.3f", user.rating)}",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = Color.White
-                    )
-                }
-                Divider(color = Color.White.copy(alpha = 0.5f), thickness = 1.dp)
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Leaderboard,
-                        contentDescription = "Global Ranking",
-                        tint = Color.Cyan,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Text(
-                        text = "Global Ranking: ${user.globalRanking}",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = Color.White
-                    )
-                }
-                Divider(color = Color.White.copy(alpha = 0.5f), thickness = 1.dp)
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.CalendarToday,
-                        contentDescription = "Attend Days",
-                        tint = Color.Magenta,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Text(
-                        text = "Attend: ${user.attend} days",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = Color.White
-                    )
-                }
+            // Header with Green accent
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(4.dp, 16.dp)
+                        .clip(CircleShape)
+                        .background(brandGreen)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Contest Statistics",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = brandGreen,
+                    fontWeight = FontWeight.Bold
+                )
             }
+
+            // Statistics Rows
+            StatRow(
+                icon = Icons.Default.Star,
+                label = "Contest Rating",
+                value = String.format("%.1f", user.rating),
+                accentColor = brandGreen
+            )
+            StatRow(
+                icon = Icons.Default.Leaderboard,
+                label = "Global Ranking",
+                value = "#${user.globalRanking}",
+                accentColor = brandGreen
+            )
+            StatRow(
+                icon = Icons.Default.CalendarToday,
+                label = "Attendance",
+                value = "${user.attend} days",
+                accentColor = brandGreen
+            )
+        }
+    }
+}
+
+@Composable
+private fun StatRow(
+    icon: ImageVector,
+    label: String,
+    value: String,
+    accentColor: Color
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        // Icon Container with the Green Touch
+        Surface(
+            shape = RoundedCornerShape(12.dp),
+            color = accentColor.copy(alpha = 0.15f), // Soft green pill
+            modifier = Modifier.size(44.dp)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = accentColor, // Solid brand green icon
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+        }
+
+        Column {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = value,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
         }
     }
 }
@@ -975,7 +948,7 @@ fun YouTubeVideoRow(
 ) {
     val context = LocalContext.current
     LazyRow(
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         item {
@@ -988,7 +961,7 @@ fun YouTubeVideoRow(
             Box(
                 modifier = Modifier
                     .size(135.dp, 100.dp)
-                    .clip(RoundedCornerShape(8.dp))
+                    .clip(RoundedCornerShape(16.dp))
                     .background(Color.Gray)
                     .clickable {
                         val intent = Intent(
@@ -1011,19 +984,44 @@ fun YouTubeVideoRow(
 
 @Composable
 fun SearchVideosButton(onClick: () -> Unit) {
+    val brandGreen = Color(0xFF498A5C)
+    // A slightly stronger tint than the cards to show it is a "clickable action"
+    val actionSurface = brandGreen.copy(alpha = 0.08f)
+
     Box(
         modifier = Modifier
             .size(135.dp, 100.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(
-                brush = Brush.horizontalGradient(listOf(Color.Blue, Color.Cyan))
-            )
-            .clickable { onClick() },
+            .background(color = actionSurface, shape = RoundedCornerShape(16.dp))
+            .clickable { onClick() }
+            .border(1.dp, brandGreen.copy(alpha = 0.15f), RoundedCornerShape(16.dp)),
         contentAlignment = Alignment.Center
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(Icons.Default.Search, contentDescription = "Search", tint = Color.White)
-            Text("Search Videos", color = Color.White, fontWeight = FontWeight.Bold)
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // Icon in a small container to make it pop
+            Surface(
+                shape = CircleShape,
+                color = brandGreen.copy(alpha = 0.15f),
+                modifier = Modifier.size(40.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = "Search",
+                        tint = brandGreen,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
+
+            Text(
+                text = "Search Videos",
+                color = brandGreen,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.ExtraBold
+            )
         }
     }
 }
