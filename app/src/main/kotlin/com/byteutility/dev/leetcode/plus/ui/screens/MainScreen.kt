@@ -114,7 +114,6 @@ fun MainScreen(mainNavController: NavHostController) {
         NavHost(
             navController = navController,
             startDestination = Home,
-            modifier = Modifier.padding(innerPadding)
         ) {
             composable<Home> {
                 HomeScreen(
