@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -20,16 +19,16 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -41,12 +40,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.byteutility.dev.leetcode.plus.data.model.LeetCodeProblem
+import com.byteutility.dev.leetcode.plus.ui.common.LeetCodeSearchBar
+import com.byteutility.dev.leetcode.plus.ui.common.ProblemItem
 import com.byteutility.dev.leetcode.plus.ui.dialogs.WeeklyGoalSetDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -68,7 +69,13 @@ fun SetWeeklyTargetScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = "Set Weekly Goals") },
+                title = {
+                    Text(
+                        text = "Set Weekly Goals",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                },
                 navigationIcon = {
                     IconButton(
                         onClick = { onPopCurrent() }
@@ -76,10 +83,9 @@ fun SetWeeklyTargetScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFFABDEF5).copy(
-                        alpha = 0.1f
-                    )
+                colors = TopAppBarDefaults.mediumTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    scrolledContainerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
                 )
             )
         },
@@ -132,18 +138,11 @@ fun ProblemSelection(
             .fillMaxSize()
             .then(modifier)
     ) {
-        TextField(
-            value = searchText,
-            onValueChange = { searchText = it },
-            placeholder = { Text("Search problems...", fontSize = 18.sp) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(55.dp),
-            singleLine = true,
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = Color.White,
-                unfocusedContainerColor = Color.White
-            )
+
+        LeetCodeSearchBar(
+            query = searchText,
+            onQueryChange = { searchText = it },
+            placeholder = "Search Problems...",
         )
 
         LazyColumn(
@@ -157,18 +156,25 @@ fun ProblemSelection(
             items(displayedItems) { problem ->
                 ProblemItem(
                     problem = problem,
-                    isSelected = selectedProblems.contains(problem),
-                    onProblemSelected = { selected ->
-                        onProblemSelected.invoke(problem, selected)
-                    },
-                    onNavigateToProblemDetails
+                    onNavigateToProblemDetails = onNavigateToProblemDetails,
+                    trailingContent = {
+                        Checkbox(
+                            checked = selectedProblems.contains(problem),
+                            onCheckedChange = { selected ->
+                                onProblemSelected.invoke(problem, selected)
+                            },
+                            colors = CheckboxDefaults.colors(
+                                checkedColor = MaterialTheme.colorScheme.primary
+                            )
+                        )
+                    }
                 )
             }
         }
 
         Row(
             modifier = Modifier
-                .padding(16.dp)
+                .padding(start = 16.dp, end = 16.dp, top = 16.dp)
                 .fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
@@ -194,7 +200,7 @@ fun ProblemSelection(
             onClick = { onConfirm(selectedProblems) },
             enabled = selectedProblems.size == 7,
             modifier = Modifier
-                .padding(horizontal = 16.dp)
+                .padding(horizontal = 16.dp, vertical = 16.dp)
                 .fillMaxWidth()
         ) {
             Text("Confirm")
