@@ -53,7 +53,6 @@ fun ProblemItem(
         ),
         border = BorderStroke(0.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f))
     ) {
-
         Row(
             modifier = Modifier
                 .height(IntrinsicSize.Min)
@@ -123,7 +122,6 @@ fun ProblemItem(
                 }
             }
         }
-
     }
 }
 

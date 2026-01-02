@@ -1,6 +1,5 @@
 package com.byteutility.dev.leetcode.plus.ui.screens.allproblems
 
-import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -18,7 +17,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material3.Badge
@@ -52,7 +50,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.byteutility.dev.leetcode.plus.data.model.LeetCodeProblem
@@ -60,7 +57,6 @@ import com.byteutility.dev.leetcode.plus.domain.model.SetMetadata
 import com.byteutility.dev.leetcode.plus.ui.common.LeetCodeSearchBar
 import com.byteutility.dev.leetcode.plus.ui.common.ProblemItem
 import kotlinx.coroutines.delay
-
 
 /**
  * Created by Shuvo on 11/24/2025.
@@ -143,7 +139,8 @@ fun AllProblemsScreen(
         ProblemSelection(
             modifier = Modifier.padding(innerPadding),
             problems = problems,
-            onNavigateToProblemDetails = onNavigateToProblemDetails
+            onNavigateToProblemDetails = onNavigateToProblemDetails,
+            onSearchQueryChange = { viewModel.onSearchQueryChanged(it) }
         )
     }
 }
@@ -152,7 +149,8 @@ fun AllProblemsScreen(
 fun ProblemSelection(
     modifier: Modifier = Modifier,
     problems: List<LeetCodeProblem>,
-    onNavigateToProblemDetails: (String) -> Unit = {}
+    onNavigateToProblemDetails: (String) -> Unit,
+    onSearchQueryChange: (String) -> Unit,
 ) {
     var currentPage by remember { mutableIntStateOf(0) }
     var searchText by remember { mutableStateOf("") }
@@ -166,20 +164,9 @@ fun ProblemSelection(
         }
     }
 
-    val animatedPlaceholder: @Composable () -> Unit = {
-        Crossfade(targetState = placeholderIndex, label = "placeholder") {
-            Text(placeholders[it], fontSize = 18.sp)
-        }
-    }
-
     val itemsPerPage = 50
-    val filteredProblems = problems.filter {
-        it.title.contains(searchText, ignoreCase = true) ||
-                it.tag.contains(searchText, ignoreCase = true) ||
-                it.difficulty.contains(searchText, ignoreCase = true)
-    }
-    val totalPages = (filteredProblems.size + itemsPerPage - 1) / itemsPerPage
-    val displayedItems = filteredProblems.drop(currentPage * itemsPerPage).take(itemsPerPage)
+    val totalPages = (problems.size + itemsPerPage - 1) / itemsPerPage
+    val displayedItems = problems.drop(currentPage * itemsPerPage).take(itemsPerPage)
 
     Column(
         modifier = Modifier
@@ -189,7 +176,10 @@ fun ProblemSelection(
     ) {
         LeetCodeSearchBar(
             query = searchText,
-            onQueryChange = { searchText = it },
+            onQueryChange = {
+                onSearchQueryChange(it)
+                searchText = it
+            },
             placeholder = placeholders[placeholderIndex],
         )
 
@@ -397,6 +387,7 @@ fun ProblemSelectionPreview() {
             Modifier.padding(innerPadding),
             problems = problems,
             onNavigateToProblemDetails = {},
+            onSearchQueryChange = {}
         )
     }
 }

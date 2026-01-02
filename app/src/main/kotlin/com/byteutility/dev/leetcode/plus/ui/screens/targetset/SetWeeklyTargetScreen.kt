@@ -138,7 +138,6 @@ fun ProblemSelection(
             .fillMaxSize()
             .then(modifier)
     ) {
-
         LeetCodeSearchBar(
             query = searchText,
             onQueryChange = { searchText = it },

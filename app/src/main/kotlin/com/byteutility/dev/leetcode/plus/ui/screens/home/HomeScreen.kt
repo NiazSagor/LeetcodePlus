@@ -274,7 +274,7 @@ fun HomeLayout(
                         }
                     }
 
-                    Box() {
+                    Box {
                         IconButton(onClick = { showMenu = true }) {
                             Icon(
                                 imageVector = Icons.Default.MoreVert,
@@ -432,7 +432,6 @@ fun UserProfileContent(
                 AutoScrollingContestList(
                     contests = uiState.leetcodeUpcomingContestsState.contests,
                     onSetInAppReminder = onSetInAppReminder,
-                    checkInAppContestReminderStatus = checkInAppContestReminderStatus,
                     onNavigateToContestDetail = onNavigateToContestDetail
                 )
                 UserProblemCategoryStats(userProblemSolvedInfo = uiState.userProblemSolvedInfo)
@@ -564,7 +563,6 @@ fun UserProblemCategoryStats(
 @Composable
 fun UserProfileCard(user: UserBasicInfo) {
     val brandGreen = Color(0xFF498A5C)
-    val lightGreenBackground = brandGreen.copy(alpha = 0.05f)
 
     Box(
         modifier = Modifier
@@ -666,7 +664,6 @@ private fun ProfileBadge(
 fun UserStatisticsCard(user: UserContestInfo) {
     // We derive a soft green from your brand color for the card background
     val brandGreen = Color(0xFF498A5C)
-    val lightGreenBackground = brandGreen.copy(alpha = 0.05f)
 
     Box(
         modifier = Modifier
@@ -911,7 +908,6 @@ fun DailyProblemCard(
 
 @Composable
 fun ProblemTextPlaceholder(remainingTime: String) {
-
     Box(
         modifier = Modifier
             .padding(8.dp)
@@ -920,9 +916,7 @@ fun ProblemTextPlaceholder(remainingTime: String) {
                 color = MaterialTheme.colorScheme.primaryContainer,
                 shape = RoundedCornerShape(12.dp)
             )
-    )
-
-    {
+    ) {
         Row(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -979,9 +973,7 @@ fun ProblemDetailsCard(
             .clickable {
                 onNavigateToProblemDetails.invoke(titleSlug)
             }
-    )
-
-    {
+    ) {
         Row(
             modifier = Modifier
                 .padding(16.dp)
@@ -1094,7 +1086,6 @@ fun YouTubeVideoRow(
 fun SearchVideosButton(onClick: () -> Unit) {
     val brandGreen = Color(0xFF498A5C)
     // A slightly stronger tint than the cards to show it is a "clickable action"
-    val actionSurface = brandGreen.copy(alpha = 0.08f)
 
     Box(
         modifier = Modifier
@@ -1138,13 +1129,10 @@ fun SearchVideosButton(onClick: () -> Unit) {
 fun AutoScrollingContestList(
     contests: List<Contest>,
     modifier: Modifier = Modifier,
-    scrollIntervalMillis: Long = 3000L,
     onSetInAppReminder: (Contest) -> Unit,
-    checkInAppContestReminderStatus: suspend (Contest) -> Boolean,
     onNavigateToContestDetail: (Contest) -> Unit = {}
 ) {
     val scope = rememberCoroutineScope()
-    var currentIndex by remember { mutableIntStateOf(0) }
     val context = LocalContext.current
     var showBottomSheet by remember { mutableStateOf(false) }
     var selectedContest by remember { mutableStateOf<Contest?>(null) }
@@ -1518,7 +1506,6 @@ fun PreviewContestScreen() {
     AutoScrollingContestList(
         contests = sampleContests,
         onSetInAppReminder = {},
-        checkInAppContestReminderStatus = { false },
         onNavigateToContestDetail = {}
     )
 }
