@@ -1,4 +1,4 @@
-package com.byteutility.dev.leetcode.plus.ui.screens.allproblems
+package com.byteutility.dev.leetcode.plus.ui.common
 
 import com.byteutility.dev.leetcode.plus.data.model.LeetCodeProblem
 import com.byteutility.dev.leetcode.plus.data.model.isMatchingQuery
@@ -18,8 +18,6 @@ class ProblemFilterDelegate {
 
     val selectedTags = _selectedTags
     val selectedDifficulties = _selectedDifficulties
-
-    val searchQuery = _searchQuery
 
     val tags = allProblemsList.map { list ->
         list.map { it.tag }.distinct()

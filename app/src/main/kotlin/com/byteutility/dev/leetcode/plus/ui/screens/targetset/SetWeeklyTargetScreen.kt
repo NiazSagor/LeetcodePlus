@@ -15,6 +15,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -49,6 +52,7 @@ import com.byteutility.dev.leetcode.plus.data.model.LeetCodeProblem
 import com.byteutility.dev.leetcode.plus.ui.common.LeetCodeSearchBar
 import com.byteutility.dev.leetcode.plus.ui.common.ProblemItem
 import com.byteutility.dev.leetcode.plus.ui.dialogs.WeeklyGoalSetDialog
+import com.byteutility.dev.leetcode.plus.ui.screens.allproblems.FilterBottomSheet
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -59,6 +63,14 @@ fun SetWeeklyTargetScreen(
     val viewModel: SetWeeklyTargetViewModel = hiltViewModel()
     val problems by viewModel.problemsList.collectAsStateWithLifecycle()
     val selectedProblems by viewModel.selectedProblems.collectAsStateWithLifecycle()
+    val tags by viewModel.tags.collectAsStateWithLifecycle()
+    val difficulties by viewModel.difficulties.collectAsStateWithLifecycle()
+    val selectedDifficulties by viewModel.selectedDifficulties.collectAsStateWithLifecycle()
+    val selectedTags by viewModel.selectedTags.collectAsStateWithLifecycle()
+    var showFilterBottomSheet by remember { mutableStateOf(false) }
+    val activeFilterCount by viewModel.activeFilterCount.collectAsStateWithLifecycle()
+    val selectedStaticProblemSet by viewModel.selectedStaticProblemSet.collectAsStateWithLifecycle()
+    val predefinedProblemSet = viewModel.predefinedProblemSets
 
     LaunchedEffect(Unit) {
         viewModel.popCurrentDestination.collect {
@@ -86,11 +98,52 @@ fun SetWeeklyTargetScreen(
                 colors = TopAppBarDefaults.mediumTopAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface,
                     scrolledContainerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
-                )
+                ),
+                actions = {
+                    IconButton(onClick = {
+                        showFilterBottomSheet = true
+                    }) {
+                        BadgedBox(
+                            badge = {
+                                if (activeFilterCount > 0) {
+                                    Badge {
+                                        Text(activeFilterCount.toString())
+                                    }
+                                }
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.FilterList,
+                                contentDescription = "Filter Problems"
+                            )
+                        }
+                    }
+                }
             )
         },
     ) { innerPadding ->
         var needToShowConfirmDialog by rememberSaveable { mutableStateOf(false) }
+
+        if (showFilterBottomSheet) {
+            FilterBottomSheet(
+                problemSets = predefinedProblemSet,
+                selectedStaticProblemSet = selectedStaticProblemSet,
+                selectedTags = selectedTags,
+                selectedDifficulties = selectedDifficulties,
+                tags = tags,
+                difficulties = difficulties,
+                onTagSelected = { viewModel.onTagSelected(it) },
+                onDifficultySelected = { viewModel.onDifficultySelected(it) },
+                onApply = { showFilterBottomSheet = false },
+                onClear = {
+                    viewModel.clearFilters()
+                    showFilterBottomSheet = false
+                },
+                onDismiss = { showFilterBottomSheet = false },
+                onProblemSetSelected = { viewModel.onProblemSetSelected(it) }
+            )
+        }
+
         ProblemSelection(
             selectedProblems = selectedProblems,
             modifier = Modifier.padding(innerPadding),
@@ -101,7 +154,8 @@ fun SetWeeklyTargetScreen(
             onNavigateToProblemDetails = onNavigateToProblemDetails,
             onProblemSelected = { problem, selected ->
                 viewModel.onProblemSelected(problem, selected)
-            }
+            },
+            onSearchQueryChange = { viewModel.onSearchQueryChanged(it) }
         )
         if (needToShowConfirmDialog) {
             WeeklyGoalSetDialog { period ->
@@ -118,19 +172,15 @@ fun ProblemSelection(
     problems: List<LeetCodeProblem>,
     onConfirm: (List<LeetCodeProblem>) -> Unit,
     onNavigateToProblemDetails: (String) -> Unit = {},
+    onSearchQueryChange: (String) -> Unit,
     onProblemSelected: (LeetCodeProblem, Boolean) -> Unit
 ) {
     var currentPage by remember { mutableIntStateOf(0) }
     var searchText by remember { mutableStateOf("") }
 
     val itemsPerPage = 20
-    val filteredProblems = problems.filter {
-        it.title.contains(searchText, ignoreCase = true) ||
-                it.tag.contains(searchText, ignoreCase = true) ||
-                it.difficulty.contains(searchText, ignoreCase = true)
-    }
-    val totalPages = (filteredProblems.size + itemsPerPage - 1) / itemsPerPage
-    val displayedItems = filteredProblems.drop(currentPage * itemsPerPage).take(itemsPerPage)
+    val totalPages = (problems.size + itemsPerPage - 1) / itemsPerPage
+    val displayedItems = problems.drop(currentPage * itemsPerPage).take(itemsPerPage)
 
     Column(
         modifier = Modifier
@@ -140,7 +190,10 @@ fun ProblemSelection(
     ) {
         LeetCodeSearchBar(
             query = searchText,
-            onQueryChange = { searchText = it },
+            onQueryChange = {
+                onSearchQueryChange(it)
+                searchText = it
+            },
             placeholder = "Search Problems...",
         )
 
@@ -267,6 +320,7 @@ fun ProblemSelectionPreview() {
             {},
             onNavigateToProblemDetails = {},
             onProblemSelected = { _, _ -> },
+            onSearchQueryChange = {}
         )
     }
 }

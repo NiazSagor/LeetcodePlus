@@ -6,6 +6,7 @@ import com.byteutility.dev.leetcode.plus.data.repository.problems.ProblemsReposi
 import com.byteutility.dev.leetcode.plus.data.repository.problems.predefined.PredefinedProblemSetMetadataProvider
 import com.byteutility.dev.leetcode.plus.domain.model.ProblemSetType
 import com.byteutility.dev.leetcode.plus.domain.model.SetMetadata
+import com.byteutility.dev.leetcode.plus.ui.common.ProblemFilterDelegate
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,10 +21,9 @@ import javax.inject.Inject
 @HiltViewModel
 class AllProblemsViewModel @Inject constructor(
     private val problemsRepository: ProblemsRepository,
+    private val filterDelegate: ProblemFilterDelegate,
     private val predefinedProblemSetMetadataProvider: PredefinedProblemSetMetadataProvider,
 ) : ViewModel() {
-
-    private val filterDelegate = ProblemFilterDelegate()
 
     val predefinedProblemSets = predefinedProblemSetMetadataProvider.getAvailableStaticSets()
 
