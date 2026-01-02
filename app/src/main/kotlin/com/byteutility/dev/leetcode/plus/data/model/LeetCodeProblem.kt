@@ -6,3 +6,9 @@ data class LeetCodeProblem(
     val tag: String,
     val titleSlug: String = "",
 )
+
+fun LeetCodeProblem.isMatchingQuery(
+    query: String,
+) = this.title.contains(query, true) ||
+        this.difficulty.contains(query, true) ||
+        this.tag.contains(query, true)

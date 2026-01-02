@@ -1,8 +1,6 @@
 package com.byteutility.dev.leetcode.plus.ui.screens.allproblems
 
-import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -17,18 +15,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
@@ -39,11 +33,10 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -54,20 +47,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.byteutility.dev.leetcode.plus.data.model.LeetCodeProblem
 import com.byteutility.dev.leetcode.plus.domain.model.SetMetadata
-import com.byteutility.dev.leetcode.plus.ui.theme.easyCategory
-import com.byteutility.dev.leetcode.plus.ui.theme.hardCategory
-import com.byteutility.dev.leetcode.plus.ui.theme.mediumCategory
+import com.byteutility.dev.leetcode.plus.ui.common.LeetCodeSearchBar
+import com.byteutility.dev.leetcode.plus.ui.common.ProblemItem
 import kotlinx.coroutines.delay
 
 /**
@@ -93,18 +81,16 @@ fun AllProblemsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = "All Problems", fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(
-                        onClick = { onPopCurrent() }
-                    ) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFFABDEF5).copy(
-                        alpha = 0.1f
+                title = {
+                    Text(
+                        text = "Problems",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.SemiBold
                     )
+                },
+                colors = TopAppBarDefaults.mediumTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    scrolledContainerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
                 ),
                 actions = {
                     IconButton(onClick = {
@@ -153,7 +139,8 @@ fun AllProblemsScreen(
         ProblemSelection(
             modifier = Modifier.padding(innerPadding),
             problems = problems,
-            onNavigateToProblemDetails = onNavigateToProblemDetails
+            onNavigateToProblemDetails = onNavigateToProblemDetails,
+            onSearchQueryChange = { viewModel.onSearchQueryChanged(it) }
         )
     }
 }
@@ -162,7 +149,8 @@ fun AllProblemsScreen(
 fun ProblemSelection(
     modifier: Modifier = Modifier,
     problems: List<LeetCodeProblem>,
-    onNavigateToProblemDetails: (String) -> Unit = {}
+    onNavigateToProblemDetails: (String) -> Unit,
+    onSearchQueryChange: (String) -> Unit,
 ) {
     var currentPage by remember { mutableIntStateOf(0) }
     var searchText by remember { mutableStateOf("") }
@@ -176,20 +164,9 @@ fun ProblemSelection(
         }
     }
 
-    val animatedPlaceholder: @Composable () -> Unit = {
-        Crossfade(targetState = placeholderIndex, label = "placeholder") {
-            Text(placeholders[it], fontSize = 18.sp)
-        }
-    }
-
     val itemsPerPage = 50
-    val filteredProblems = problems.filter {
-        it.title.contains(searchText, ignoreCase = true) ||
-                it.tag.contains(searchText, ignoreCase = true) ||
-                it.difficulty.contains(searchText, ignoreCase = true)
-    }
-    val totalPages = (filteredProblems.size + itemsPerPage - 1) / itemsPerPage
-    val displayedItems = filteredProblems.drop(currentPage * itemsPerPage).take(itemsPerPage)
+    val totalPages = (problems.size + itemsPerPage - 1) / itemsPerPage
+    val displayedItems = problems.drop(currentPage * itemsPerPage).take(itemsPerPage)
 
     Column(
         modifier = Modifier
@@ -197,18 +174,13 @@ fun ProblemSelection(
             .fillMaxSize()
             .then(modifier)
     ) {
-        TextField(
-            value = searchText,
-            onValueChange = { searchText = it },
-            placeholder = animatedPlaceholder,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(55.dp),
-            singleLine = true,
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = Color.White,
-                unfocusedContainerColor = Color.White
-            )
+        LeetCodeSearchBar(
+            query = searchText,
+            onQueryChange = {
+                onSearchQueryChange(it)
+                searchText = it
+            },
+            placeholder = placeholders[placeholderIndex],
         )
 
         LazyColumn(
@@ -250,64 +222,6 @@ fun ProblemSelection(
                 Text("Next")
             }
         }
-    }
-}
-
-@Composable
-fun ProblemItem(
-    problem: LeetCodeProblem,
-    onNavigateToProblemDetails: (String) -> Unit = {}
-) {
-    val backgroundColor: Color = getDifficultyColor(problem.difficulty)
-    Card(
-        shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(4.dp),
-    ) {
-        Row(
-            modifier = Modifier
-                .clickable {
-                    onNavigateToProblemDetails.invoke(problem.titleSlug)
-                }
-                .fillMaxWidth()
-                .background(backgroundColor)
-                .padding(8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column(modifier = Modifier.fillMaxWidth(0.85f)) {
-                Text(
-                    text = problem.title,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = buildAnnotatedString {
-                        withStyle(style = SpanStyle(fontWeight = FontWeight.SemiBold)) {
-                            append("Tag: ")
-                        }
-                        append(problem.tag)
-                    }, style = MaterialTheme.typography.bodySmall
-                )
-                Text(
-                    text = buildAnnotatedString {
-                        withStyle(style = SpanStyle(fontWeight = FontWeight.SemiBold)) {
-                            append("Difficulty: ")
-                        }
-                        append(problem.difficulty)
-                    },
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun getDifficultyColor(difficulty: String): Color {
-    return when (difficulty.lowercase()) {
-        "easy" -> MaterialTheme.colorScheme.easyCategory
-        "medium" -> MaterialTheme.colorScheme.mediumCategory
-        "hard" -> MaterialTheme.colorScheme.hardCategory
-        else -> MaterialTheme.colorScheme.surfaceVariant
     }
 }
 
@@ -473,6 +387,7 @@ fun ProblemSelectionPreview() {
             Modifier.padding(innerPadding),
             problems = problems,
             onNavigateToProblemDetails = {},
+            onSearchQueryChange = {}
         )
     }
 }
