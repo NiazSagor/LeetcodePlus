@@ -30,27 +30,36 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.Leaderboard
 import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.TrackChanges
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberTooltipState
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -186,6 +195,9 @@ fun HomeLayout(
         )
     }
 
+    val brandGreen = Color(0xFF498A5C)
+    var showMenu by remember { mutableStateOf(false) }
+    val tooltipState = rememberTooltipState()
     var clickCount by remember { mutableIntStateOf(0) }
     var lastClickTime by remember { mutableLongStateOf(0L) }
     val scope = rememberCoroutineScope()
@@ -220,16 +232,73 @@ fun HomeLayout(
                         })
                 },
                 actions = {
-                    TextButton(
-                        onClick = { if (uiState.isWeeklyGoalSet) onGoalStatus() else onSetGoal() },
-                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.primary)
+                    TooltipBox(
+                        positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                        tooltip = {
+                            PlainTooltip(
+                                containerColor = brandGreen,
+                                contentColor = Color.White,
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Text(if (uiState.isWeeklyGoalSet) "View Goal Status" else "Set Weekly Goal")
+                            }
+                        },
+                        state = tooltipState
                     ) {
-                        Text(
-                            text = if (uiState.isWeeklyGoalSet) "Status" else "Set Goal",
-                            style = MaterialTheme.typography.labelLarge
-                        )
+                        IconButton(
+                            onClick = {
+                                if (uiState.isWeeklyGoalSet) {
+                                    onGoalStatus.invoke()
+                                } else {
+                                    onSetGoal.invoke()
+                                }
+                            },
+                            modifier = Modifier
+                                .padding(end = 8.dp)
+                                .size(40.dp)
+                                .background(
+                                    color = brandGreen.copy(alpha = 0.1f),
+                                    shape = CircleShape
+                                )
+                        ) {
+                            Icon(
+                                imageVector = if (uiState.isWeeklyGoalSet) Icons.Default.TrackChanges else Icons.Default.EmojiEvents,
+                                contentDescription = "Weekly Goal",
+                                tint = brandGreen,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
                     }
-                    ProfileAvatar(uiState.userBasicInfo.avatar) { showLogoutDialog = true }
+
+                    Box() {
+                        IconButton(onClick = { showMenu = true }) {
+                            Icon(
+                                imageVector = Icons.Default.MoreVert,
+                                contentDescription = "More options",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false },
+                            modifier = Modifier.background(MaterialTheme.colorScheme.surface)
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Logout") },
+                                onClick = {
+                                    showMenu = false
+                                    showLogoutDialog = true
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Default.Logout,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            )
+                        }
+                    }
                 },
                 colors = TopAppBarDefaults.mediumTopAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface,
