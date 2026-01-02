@@ -847,7 +847,7 @@ fun DailyProblemCard(
         modifier = Modifier
             .padding(4.dp)
             .fillMaxWidth()
-            .shadow(elevation = 4.dp, shape = RoundedCornerShape(16.dp))
+            .shadow(elevation = 1.dp, shape = RoundedCornerShape(16.dp))
             .background(MaterialTheme.colorScheme.surface)
     ) { state ->
         var remainingTime by remember { mutableStateOf(calculateRemainingTime()) }
@@ -878,13 +878,18 @@ fun DailyProblemCard(
 
 @Composable
 fun ProblemTextPlaceholder(remainingTime: String) {
-    Card(
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+
+    Box(
         modifier = Modifier
-            .padding(horizontal = 8.dp, vertical = 8.dp)
+            .padding(8.dp)
             .fillMaxWidth()
-    ) {
+            .background(
+                color = MaterialTheme.colorScheme.primaryContainer,
+                shape = RoundedCornerShape(12.dp)
+            )
+    )
+
+    {
         Row(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -933,16 +938,17 @@ fun ProblemDetailsCard(
         else -> MaterialTheme.colorScheme.onSurface
     }
 
-    Card(
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = backgroundColor),
+    Box(
         modifier = Modifier
+            .padding(8.dp)
+            .fillMaxWidth()
+            .background(color = backgroundColor, shape = RoundedCornerShape(12.dp))
             .clickable {
                 onNavigateToProblemDetails.invoke(titleSlug)
             }
-            .padding(horizontal = 8.dp, vertical = 8.dp)
-            .fillMaxWidth()
-    ) {
+    )
+
+    {
         Row(
             modifier = Modifier
                 .padding(16.dp)
