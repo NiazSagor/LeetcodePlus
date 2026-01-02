@@ -5,19 +5,21 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.CalendarContract
 import androidx.compose.animation.Crossfade
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -25,18 +27,18 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.Leaderboard
-import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Public
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.TrackChanges
@@ -72,8 +74,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
@@ -421,10 +425,9 @@ fun UserProfileContent(
                     onLoadMoreVideos,
                     onSearchClick
                 )
-                Text(
-                    text = "Upcoming contests",
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    modifier = Modifier.padding(start = 8.dp)
+                Spacer(modifier = Modifier.height(10.dp))
+                SectionHeader(
+                    title = "Upcoming Contests"
                 )
                 AutoScrollingContestList(
                     contests = uiState.leetcodeUpcomingContestsState.contests,
@@ -476,6 +479,38 @@ fun UserProfileContent(
                 }
             }
         }
+    }
+}
+
+@Composable
+fun SectionHeader(
+    title: String,
+    modifier: Modifier = Modifier
+) {
+    val brandGreen = Color(0xFF498A5C)
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp, vertical = 0.dp), // Standard M3 section padding
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(width = 4.dp, height = 18.dp)
+                .clip(CircleShape)
+                .background(brandGreen)
+        )
+
+        Spacer(modifier = Modifier.width(10.dp))
+
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.ExtraBold,
+            color = MaterialTheme.colorScheme.onSurface,
+            letterSpacing = 0.5.sp
+        )
     }
 }
 
@@ -535,7 +570,6 @@ fun UserProfileCard(user: UserBasicInfo) {
         modifier = Modifier
             .padding(4.dp)
             .fillMaxWidth()
-            .background(color = lightGreenBackground, shape = RoundedCornerShape(16.dp))
             .border(1.dp, brandGreen.copy(alpha = 0.15f), RoundedCornerShape(16.dp)),
     ) {
         Row(
@@ -638,7 +672,6 @@ fun UserStatisticsCard(user: UserContestInfo) {
         modifier = Modifier
             .padding(4.dp)
             .fillMaxWidth()
-            .background(color = lightGreenBackground, shape = RoundedCornerShape(16.dp))
             .border(1.dp, brandGreen.copy(alpha = 0.15f), RoundedCornerShape(16.dp)),
     ) {
         Column(
@@ -1066,7 +1099,6 @@ fun SearchVideosButton(onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .size(135.dp, 100.dp)
-            .background(color = actionSurface, shape = RoundedCornerShape(16.dp))
             .clickable { onClick() }
             .border(1.dp, brandGreen.copy(alpha = 0.15f), RoundedCornerShape(16.dp)),
         contentAlignment = Alignment.Center
@@ -1111,7 +1143,6 @@ fun AutoScrollingContestList(
     checkInAppContestReminderStatus: suspend (Contest) -> Boolean,
     onNavigateToContestDetail: (Contest) -> Unit = {}
 ) {
-    val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     var currentIndex by remember { mutableIntStateOf(0) }
     val context = LocalContext.current
@@ -1119,85 +1150,16 @@ fun AutoScrollingContestList(
     var selectedContest by remember { mutableStateOf<Contest?>(null) }
     var isInAppContestReminderSet by remember { mutableStateOf(false) }
 
-    LaunchedEffect(contests) {
-        if (contests.isEmpty()) return@LaunchedEffect
-        while (true) {
-            delay(scrollIntervalMillis)
-            if (contests.isNotEmpty()) {
-                currentIndex = (currentIndex + 1) % contests.size
-                scope.launch {
-                    listState.animateScrollToItem(currentIndex)
-                }
-            }
-        }
-    }
-
     LazyRow(
-        state = listState,
         modifier = modifier.padding(vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
-        contentPadding = PaddingValues(horizontal = 16.dp)
+        contentPadding = PaddingValues(horizontal = 8.dp)
     ) {
         items(contests) { contest ->
-            Card(
-                shape = RoundedCornerShape(12.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                modifier = Modifier
-                    .width(IntrinsicSize.Max)
-                    .clickable { onNavigateToContestDetail(contest) }
-            ) {
-                Column(
-                    modifier = Modifier
-                        .padding(12.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = contest.event,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        text = formatContestDate(contest.start),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.Red,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Link,
-                            contentDescription = "Link to contest",
-                            modifier = Modifier
-                                .size(24.dp)
-                                .clickable {
-                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(contest.href))
-                                    context.startActivity(intent)
-                                },
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        Icon(
-                            imageVector = Icons.Default.Event,
-                            contentDescription = "Add a reminder",
-                            modifier = Modifier
-                                .size(24.dp)
-                                .clickable {
-                                    selectedContest = contest
-                                    scope.launch {
-                                        isInAppContestReminderSet =
-                                            checkInAppContestReminderStatus(contest)
-                                        showBottomSheet = true
-                                    }
-                                },
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
-            }
+            ContestItem(
+                contest = contest,
+                onNavigateToContestDetail = onNavigateToContestDetail,
+            )
         }
     }
 
@@ -1243,6 +1205,108 @@ fun AutoScrollingContestList(
                 },
                 isInAppContestReminderSet = isInAppContestReminderSet
             )
+        }
+    }
+}
+
+@Composable
+fun ContestItem(
+    contest: Contest,
+    onNavigateToContestDetail: (Contest) -> Unit,
+) {
+    val brandGreen = Color(0xFF498A5C)
+
+    Surface(
+        modifier = Modifier
+            .width(240.dp)
+            .clickable { onNavigateToContestDetail(contest) },
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(1.dp, brandGreen.copy(alpha = 0.1f))
+    ) {
+        Box {
+            Icon(
+                imageVector = Icons.Default.EmojiEvents,
+                contentDescription = null,
+                modifier = Modifier
+                    .size(50.dp)
+                    .align(Alignment.BottomEnd)
+                    .offset(x = 5.dp, y = 4.dp)
+                    .alpha(0.12f),
+            )
+
+            Canvas(modifier = Modifier.matchParentSize()) {
+                val center = Offset(size.width, size.height)
+                drawCircle(
+                    color = brandGreen.copy(alpha = 0.03f),
+                    radius = 90.dp.toPx(),
+                    center = center
+                )
+                drawCircle(
+                    color = brandGreen.copy(alpha = 0.05f),
+                    radius = 60.dp.toPx(),
+                    center = center
+                )
+                drawCircle(
+                    color = brandGreen.copy(alpha = 0.07f),
+                    radius = 30.dp.toPx(),
+                    center = center
+                )
+            }
+
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Text(
+                    text = contest.event,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color(0xFF1B3D2F),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .background(brandGreen.copy(alpha = 0.08f), RoundedCornerShape(8.dp))
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Schedule,
+                        contentDescription = null,
+                        tint = brandGreen,
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = formatContestDate(contest.start),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = brandGreen,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    modifier = Modifier
+                        .size(20.dp)
+                ) {
+                    Box(
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                            contentDescription = "Details",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+            }
         }
     }
 }
