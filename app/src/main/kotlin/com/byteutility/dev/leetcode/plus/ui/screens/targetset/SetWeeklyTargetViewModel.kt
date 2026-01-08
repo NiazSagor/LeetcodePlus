@@ -96,7 +96,6 @@ class SetWeeklyTargetViewModel @Inject constructor(
         initialValue = 0
     )
 
-
     val problemsList = _allProblemsList.flatMapLatest { latestProblems ->
         filterDelegate.onProblemSetChanged(latestProblems)
         filterDelegate.filteredProblemsList
