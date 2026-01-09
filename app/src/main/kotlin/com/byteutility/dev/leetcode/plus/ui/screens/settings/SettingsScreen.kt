@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -17,6 +18,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -24,20 +27,23 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.ExitToApp
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.surfaceColorAtElevation
@@ -49,9 +55,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -495,69 +501,83 @@ fun IntervalSelectionDialog(
     dialogSubtitle: String
 ) {
     var selectedInterval by remember { mutableLongStateOf(currentInterval) }
+    val emeraldGreen = Color(0xFF498A5C)
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(text = dialogTitle) },
+        title = {
+            Text(
+                text = dialogTitle,
+                style = MaterialTheme.typography.headlineSmall
+            )
+        },
         text = {
-            Column {
-                Text(
-                    text = dialogSubtitle,
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
-                intervalOptions.forEach { interval ->
-                    Row(
+            LazyColumn(
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(vertical = 8.dp)
+            ) {
+                item {
+                    Text(
+                        text = dialogSubtitle,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 12.dp, start = 4.dp)
+                    )
+                }
+                items(intervalOptions) { interval ->
+                    val isSelected = selectedInterval == interval.time
+
+                    ListItem(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { selectedInterval = interval.time }
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        val intervalText = buildAnnotatedString {
-                            append(interval.displayLabel)
-                            if (interval.isDefault) {
-                                append(" (Default)")
-                            }
-                        }
-
-                        Text(
-                            text = intervalText,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = if (selectedInterval == interval.time) {
-                                MaterialTheme.colorScheme.primary
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable { selectedInterval = interval.time },
+                        headlineContent = {
+                            Text(
+                                text = interval.displayLabel,
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                            )
+                        },
+                        supportingContent = if (interval.isDefault) {
+                            { Text("Recommended Default") }
+                        } else {
+                            null
+                        },
+                        trailingContent = {
+                            RadioButton(
+                                selected = isSelected,
+                                onClick = null, // Handled by ListItem clickable
+                                colors = RadioButtonDefaults.colors(
+                                    selectedColor = emeraldGreen
+                                )
+                            )
+                        },
+                        colors = ListItemDefaults.colors(
+                            containerColor = if (isSelected) {
+                                emeraldGreen.copy(alpha = 0.08f)
                             } else {
-                                MaterialTheme.colorScheme.onSurface
-                            },
-                            fontWeight = if (selectedInterval == interval.time) {
-                                FontWeight.Bold
-                            } else {
-                                FontWeight.Normal
+                                Color.Transparent
                             }
                         )
-                        if (selectedInterval == interval.time) {
-                            Icon(
-                                imageVector = Icons.Default.Info,
-                                contentDescription = "Selected",
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                    }
+                    )
                 }
             }
         },
         confirmButton = {
-            Button(onClick = { onConfirm(selectedInterval) }) {
-                Text("Apply")
+            TextButton(
+                onClick = { onConfirm(selectedInterval) },
+                colors = ButtonDefaults.textButtonColors(contentColor = emeraldGreen)
+            ) {
+                Text("Apply", fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
-            Button(onClick = onDismiss) {
+            TextButton(onClick = onDismiss) {
                 Text("Cancel")
             }
-        }
+        },
+        shape = RoundedCornerShape(28.dp)
     )
 }
 
