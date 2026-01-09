@@ -3,34 +3,40 @@ package com.byteutility.dev.leetcode.plus.ui.screens.settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.NotificationImportant
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Widgets
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -43,10 +49,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -57,7 +61,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.byteutility.dev.leetcode.plus.BuildConfig
 import com.byteutility.dev.leetcode.plus.core.settings.config.IntervalConfigurations
 import com.byteutility.dev.leetcode.plus.core.settings.model.IntervalOption
-import com.byteutility.dev.leetcode.plus.ui.common.AdBannerAdaptive
 import com.byteutility.dev.leetcode.plus.ui.screens.settings.composables.DailyProblemWidgetPlaceholder
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -120,9 +123,13 @@ fun SettingsScreen(
         )
     }
 
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+
     Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             TopAppBar(
+                scrollBehavior = scrollBehavior,
                 title = {
                     Text(
                         text = "Settings",
@@ -138,214 +145,288 @@ fun SettingsScreen(
         }
     ) { paddingValues ->
         Column(
+            verticalArrangement = Arrangement.spacedBy(16.dp),
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
                 .padding(paddingValues)
+                .padding(horizontal = 16.dp)
         ) {
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(horizontal = 16.dp)
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                SettingsSectionCard(
-                    title = "Account",
-                    icon = Icons.Default.Person
-                ) {
-                    if (userInfo.userName.isNotEmpty()) {
-                        SettingsInfoRow(
-                            label = "Username",
-                            value = userInfo.userName
-                        )
-                        Divider(modifier = Modifier.padding(vertical = 8.dp))
-                        SettingsInfoRow(
-                            label = "Name",
-                            value = userInfo.name
-                        )
-                        Divider(modifier = Modifier.padding(vertical = 8.dp))
-                        SettingsInfoRow(
-                            label = "Ranking",
-                            value = "#${userInfo.ranking}"
-                        )
-                        Divider(modifier = Modifier.padding(vertical = 8.dp))
-                        SettingsActionRow(
-                            icon = Icons.Default.ExitToApp,
-                            label = "Logout",
-                            iconTint = Color.Red,
-                            onClick = { showLogoutDialog = true }
-                        )
+            SettingsSection(title = "Account") {
+                if (userInfo.userName.isNotEmpty()) {
+                    SettingsInfoRow(label = "Username", value = userInfo.userName)
+
+                    // M3 Dividers are very subtle (Outline Variant)
+                    HorizontalDivider(
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        thickness = 0.5.dp,
+                        color = MaterialTheme.colorScheme.outlineVariant
+                    )
+
+                    SettingsInfoRow(label = "Name", value = userInfo.name)
+
+                    HorizontalDivider(
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        thickness = 0.5.dp,
+                        color = MaterialTheme.colorScheme.outlineVariant
+                    )
+
+                    SettingsInfoRow(label = "Ranking", value = "#${userInfo.ranking}")
+
+                    HorizontalDivider(
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        thickness = 0.5.dp,
+                        color = MaterialTheme.colorScheme.outlineVariant
+                    )
+
+                    // Modern Action Row
+                    ListItem(
+                        headlineContent = {
+                            Text("Logout", color = MaterialTheme.colorScheme.error)
+                        },
+                        leadingContent = {
+                            Icon(
+                                imageVector = Icons.Default.ExitToApp,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        },
+                        modifier = Modifier.clickable { showLogoutDialog = true },
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                    )
+                }
+            }
+
+            SettingsSection(title = "Data Sync") {
+                // 1. Actionable Row (Clickable)
+                SettingsActionRow(
+                    label = "Sync Interval",
+                    value = "$syncInterval minutes",
+                    onClick = { showSyncIntervalDialog = true }
+                )
+
+                // Subtle M3 Divider
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    thickness = 0.5.dp,
+                    color = MaterialTheme.colorScheme.outlineVariant
+                )
+
+                // 2. Static Info Row
+                SettingsInfoRow(
+                    label = "Last Synced",
+                    value = lastSyncTime
+                )
+            }
+
+            SettingsSection(title = "Notifications") {
+                // 1. Actionable Row (Clickable)
+                SettingsActionRow(
+                    label = "Notifications Interval",
+                    value = "$notificationInterval minutes",
+                    onClick = { showNotificationIntervalDialog = true }
+                )
+            }
+
+            SettingsSection(title = "Daily Problem Widget") {
+                // 1. The Switch Control
+                SettingsSwitchRow(
+                    label = if (isWidgetPinned) "Widget Pinned" else "Pin Widget",
+                    subLabel = if (!isWidgetPinned) "Add daily problem widget to your home screen" else null,
+                    checked = isWidgetPinned,
+                    enabled = !isWidgetPinned,
+                    onCheckedChange = { checked ->
+                        if (checked) {
+                            viewModel.requestPinWidget()
+                        }
+                        isWidgetPinned = checked
                     }
-                }
+                )
 
-                // Data Sync Section
-                SettingsSectionCard(
-                    title = "Data Sync",
-                    icon = Icons.Default.Refresh
-                ) {
-                    SettingsClickableRow(
-                        label = "Sync Interval",
-                        value = "$syncInterval minutes",
-                        onClick = { showSyncIntervalDialog = true }
-                    )
-                    Divider(modifier = Modifier.padding(vertical = 8.dp))
-                    SettingsInfoRow(
-                        label = "Last Synced",
-                        value = lastSyncTime
-                    )
-                }
-
-                // notification
-                SettingsSectionCard(
-                    title = "Notifications",
-                    icon = Icons.Default.NotificationImportant
-                ) {
-                    SettingsClickableRow(
-                        label = "Notifications Interval",
-                        value = "$notificationInterval minutes",
-                        onClick = { showNotificationIntervalDialog = true }
-                    )
-                }
-
-                // widget
-                SettingsSectionCard(
-                    title = "Daily Problem Widget",
-                    icon = Icons.Default.Widgets
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                // 2. The Conditional Preview
+                if (!isWidgetPinned) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                            .background(
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                            .padding(16.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = if (isWidgetPinned) "Widget Pinned" else "Pin Widget",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Switch(
-                            enabled = !isWidgetPinned,
-                            checked = isWidgetPinned,
-                            onCheckedChange = {
-                                if (it) {
-                                    viewModel.requestPinWidget()
-                                }
-                                isWidgetPinned = it
-                            }
-                        )
-                    }
-
-                    if (!isWidgetPinned) {
-                        Text(
-                            text = "Add daily problem widget in your home",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
                         DailyProblemWidgetPlaceholder()
                     }
                 }
+            }
+            SettingsSection(title = "App Information") {
+                SettingsInfoRow(
+                    label = "Version",
+                    value = BuildConfig.VERSION_NAME
+                )
 
-                // App Information Section
-                SettingsSectionCard(
-                    title = "App Information",
-                    icon = Icons.Default.Info
-                ) {
-                    SettingsInfoRow(
-                        label = "Version",
-                        value = BuildConfig.VERSION_NAME
-                    )
-                    Divider(modifier = Modifier.padding(vertical = 8.dp))
-                    SettingsInfoRow(
-                        label = "Version Code",
-                        value = BuildConfig.VERSION_CODE.toString()
-                    )
-                }
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    thickness = 0.5.dp,
+                    color = MaterialTheme.colorScheme.outlineVariant
+                )
 
-                // About Section
-                SettingsSectionCard(
-                    title = "About",
-                    icon = Icons.Default.Info
-                ) {
+                SettingsInfoRow(
+                    label = "Version Code",
+                    value = BuildConfig.VERSION_CODE.toString()
+                )
+            }
+            SettingsSection(title = "About") {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    // App Description
                     Text(
-                        text = "LeetCode Plus is your companion app for tracking your LeetCode progress, managing weekly goals, and staying updated with upcoming contests.",
+                        text = "LeetCode Plus is your companion app for tracking progress, managing goals, and staying updated with contests.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        lineHeight = 20.sp
+                        lineHeight = 22.sp
                     )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        text = "Features:",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    BulletPoint("Track your LeetCode statistics and progress")
-                    BulletPoint("Set and monitor weekly goals")
-                    BulletPoint("View daily challenges")
-                    BulletPoint("Browse all LeetCode problems")
-                    BulletPoint("Get contest reminders")
-                    BulletPoint("Access video solutions")
-                }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // Features Header
+                    Text(
+                        text = "Key Features",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color(0xFF498A5C), // Emerald Green
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.5.sp
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Feature List
+                    val features = listOf(
+                        "Track statistics and progress",
+                        "Set and monitor weekly goals",
+                        "View daily challenges",
+                        "Browse all problems",
+                        "Get contest reminders",
+                        "Access video solutions"
+                    )
+
+                    features.forEach { feature ->
+                        FeatureRow(text = feature)
+                    }
+                }
             }
-            AdBannerAdaptive(
-                modifier = Modifier.fillMaxWidth()
+
+            Spacer(
+                modifier = Modifier
+                    .windowInsetsPadding(WindowInsets.navigationBars)
+                    .height(100.dp)
             )
         }
     }
 }
 
 @Composable
-fun SettingsSectionCard(
-    title: String,
-    icon: ImageVector,
-    content: @Composable () -> Unit
-) {
-    val gradientBrush = Brush.horizontalGradient(
-        colors = listOf(Color(0xFF4CAF50), Color.LightGray)
-    )
-
-    Card(
+fun FeatureRow(text: String) {
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+            .padding(vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Column(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            // Section Header with gradient
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(gradientBrush)
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(24.dp)
-                )
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-            }
-
-            // Section Content
-            Column(
-                modifier = Modifier.padding(16.dp)
-            ) {
-                content()
-            }
-        }
+        Box(
+            modifier = Modifier
+                .size(6.dp)
+                .background(Color(0xFF498A5C), CircleShape)
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
     }
+}
+
+@Composable
+fun SettingsSwitchRow(
+    label: String,
+    subLabel: String? = null,
+    checked: Boolean,
+    enabled: Boolean = true,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    ListItem(
+        headlineContent = {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyLarge,
+                color = if (enabled) {
+                    MaterialTheme.colorScheme.onSurface
+                } else {
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                }
+            )
+        },
+        supportingContent = subLabel?.let {
+            {
+                Text(
+                    modifier = Modifier.padding(top = 10.dp),
+                    text = it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+            }
+        },
+        trailingContent = {
+            Switch(
+                enabled = enabled,
+                checked = checked,
+                onCheckedChange = onCheckedChange,
+                colors = SwitchDefaults.colors(
+                    checkedTrackColor = Color(0xFF498A5C),
+                    checkedThumbColor = Color.White
+                )
+            )
+        },
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+    )
+}
+
+@Composable
+fun SettingsActionRow(
+    label: String,
+    value: String? = null,
+    onClick: () -> Unit
+) {
+    ListItem(
+        modifier = Modifier.clickable { onClick() },
+        headlineContent = {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        },
+        trailingContent = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (value != null) {
+                    Text(
+                        text = value,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color(0xFF498A5C), // Emerald Green
+                        modifier = Modifier.padding(end = 8.dp)
+                    )
+                }
+                Icon(
+                    imageVector = Icons.Default.ChevronRight,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.outline,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        },
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+    )
 }
 
 @Composable
@@ -353,110 +434,53 @@ fun SettingsInfoRow(
     label: String,
     value: String
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyLarge,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-    }
-}
-
-@Composable
-fun SettingsActionRow(
-    icon: ImageVector,
-    label: String,
-    iconTint: Color = MaterialTheme.colorScheme.primary,
-    onClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() }
-            .padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = iconTint,
-            modifier = Modifier.size(24.dp)
-        )
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyLarge,
-            fontWeight = FontWeight.SemiBold,
-            color = iconTint
-        )
-    }
-}
-
-@Composable
-fun BulletPoint(text: String) {
-    Row(
-        modifier = Modifier.padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Text(
-            text = "•",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.primary,
-            fontWeight = FontWeight.Bold
-        )
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
-}
-
-@Composable
-fun SettingsClickableRow(
-    label: String,
-    value: String,
-    onClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() }
-            .padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+    ListItem(
+        headlineContent = {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        },
+        trailingContent = {
             Text(
                 text = value,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface
             )
-            Icon(
-                imageVector = Icons.Default.Info,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(20.dp)
-            )
+        },
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+    )
+}
+
+@Composable
+fun SettingsSection(
+    title: String,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+    ) {
+        // Section Header
+        Text(
+            text = title,
+            style = MaterialTheme.typography.labelLarge,
+            color = Color(0xFF498A5C),
+            modifier = Modifier.padding(8.dp) // Emerald Green accent
+        )
+
+        // Grouped Items Surface
+        Surface(
+            color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(vertical = 8.dp)) {
+                content()
+            }
         }
     }
 }
