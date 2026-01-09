@@ -14,7 +14,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -28,7 +27,6 @@ fun DailyProblemWidgetPlaceholder() {
         modifier = Modifier
             .padding(top = 16.dp)
             .fillMaxWidth()
-            .background(Color.White)
             .clip(RoundedCornerShape(16.dp))
             .background(MaterialTheme.colorScheme.errorContainer)
             .clip(RoundedCornerShape(16.dp))
