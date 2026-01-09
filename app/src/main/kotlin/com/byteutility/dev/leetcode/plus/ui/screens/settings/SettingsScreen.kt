@@ -591,7 +591,6 @@ fun IntervalSelectionDialog(
 fun LogoutConfirmationDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
-    //windowInsets = BottomSheetDefaults.windowInsets
 ) {
     val sheetState = rememberModalBottomSheetState()
 

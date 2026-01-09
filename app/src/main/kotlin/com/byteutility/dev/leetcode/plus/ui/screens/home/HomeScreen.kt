@@ -42,7 +42,6 @@ import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.TrackChanges
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -104,6 +103,7 @@ import com.byteutility.dev.leetcode.plus.ui.common.ProgressIndicator
 import com.byteutility.dev.leetcode.plus.ui.model.YouTubeVideo
 import com.byteutility.dev.leetcode.plus.ui.screens.home.model.UserDetailsUiState
 import com.byteutility.dev.leetcode.plus.ui.screens.home.model.VideosByPlayListState
+import com.byteutility.dev.leetcode.plus.ui.screens.settings.LogoutConfirmationDialog
 import com.byteutility.dev.leetcode.plus.utils.formatContestDate
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -335,29 +335,6 @@ fun HomeLayout(
                 )
             }
         }
-    }
-}
-
-@Composable
-fun ProfileAvatar(
-    model: String,
-    onClick: () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .padding(end = 16.dp, start = 8.dp)
-            .size(32.dp) // Standard M3 small avatar size
-            .clip(CircleShape)
-            .clickable { onClick() },
-        contentAlignment = Alignment.Center
-    ) {
-        AsyncImage(
-            model = model,
-            placeholder = painterResource(R.drawable.profile_placeholder),
-            contentDescription = "Profile",
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop
-        )
     }
 }
 
@@ -1326,32 +1303,6 @@ fun AddReminderBottomSheet(
             }
         }
     }
-}
-
-@Composable
-fun LogoutConfirmationDialog(
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(text = "Confirm Logout") },
-        text = { Text(text = "Are you sure you want to logout?") },
-        confirmButton = {
-            Button(
-                onClick = onConfirm
-            ) {
-                Text("Logout")
-            }
-        },
-        dismissButton = {
-            Button(
-                onClick = onDismiss
-            ) {
-                Text("Cancel")
-            }
-        }
-    )
 }
 
 private fun calculateRemainingTime(): String {
