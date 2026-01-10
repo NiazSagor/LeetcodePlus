@@ -1,18 +1,19 @@
 package com.byteutility.dev.leetcode.plus.ui.codeEditSubmit.config
 
+import android.graphics.Color
+import android.graphics.Typeface
 import android.util.Log
 import io.github.rosemoe.sora.langs.textmate.TextMateColorScheme
 import io.github.rosemoe.sora.langs.textmate.TextMateLanguage
 import io.github.rosemoe.sora.langs.textmate.registry.ThemeRegistry
 import io.github.rosemoe.sora.widget.CodeEditor
+import io.github.rosemoe.sora.widget.schemes.EditorColorScheme
 
 /**
  * Helper class to configure CodeEditor with language-specific settings.
  */
 @Suppress("MagicNumber", "TooGenericExceptionCaught")
 object EditorLanguageHelper {
-
-    private const val TAG = "EditorLanguageHelper"
 
     /**
      * Configures the CodeEditor with language-specific settings including
@@ -24,36 +25,30 @@ object EditorLanguageHelper {
      */
     fun configureEditor(editor: CodeEditor, languageSlug: String): Boolean {
         return try {
-            // 1. Get TextMate scope name from language mapper
             val scopeName = LanguageMapper.getTextMateScopeName(languageSlug)
-            Log.d(TAG, "Configuring editor for language: $languageSlug -> $scopeName")
+            val themeRegistry = ThemeRegistry.getInstance()
+            editor.colorScheme = TextMateColorScheme.create(themeRegistry)
+            editor.setEditorLanguage(TextMateLanguage.create(scopeName, true))
 
-            // 2. Set TextMate color scheme
-            val colorScheme = TextMateColorScheme.create(ThemeRegistry.getInstance())
-            editor.colorScheme = colorScheme
+            editor.typefaceText = Typeface.MONOSPACE
+            editor.setTextSize(15f)
 
-            // 3. Create TextMate language with auto-completion enabled
-            val language = TextMateLanguage.create(scopeName, true)
+            editor.setLineSpacing(0f, 1.2f)
 
-            // 4. Set the language on editor
-            editor.setEditorLanguage(language)
+            editor.colorScheme.setColor(
+                EditorColorScheme.SELECTION_INSERT,
+                Color.parseColor("#498A5C")
+            )
 
-            // 5. Enable auto-indentation
-            editor.props.autoIndent = true
-
-            // 6. Enable symbol pair auto-completion (parenthesis, brackets, quotes)
-            editor.props.symbolPairAutoCompletion = true
-
-            // 7. Configure tab width based on language
-            editor.setTabWidth(getTabWidthForLanguage(languageSlug))
-
-            // 8. Optional: Disable sticky scroll for better performance on code snippets
-            editor.props.stickyScroll = false
-
-            Log.d(TAG, "Successfully configured editor for language: $languageSlug")
+            editor.props.apply {
+                autoIndent = true
+                symbolPairAutoCompletion = true
+            }
+            editor.setHighlightBracketPair(true)
+            editor.tabWidth = getTabWidthForLanguage(languageSlug)
             true
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to configure editor for language: $languageSlug", e)
+            Log.e("EditorConfig", "Configuration failed", e)
             false
         }
     }

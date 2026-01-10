@@ -2,95 +2,110 @@ package com.byteutility.dev.leetcode.plus.ui.screens.allproblems
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.byteutility.dev.leetcode.plus.data.model.LeetCodeProblem
 import com.byteutility.dev.leetcode.plus.data.repository.problems.ProblemsRepository
+import com.byteutility.dev.leetcode.plus.data.repository.problems.predefined.PredefinedProblemSetMetadataProvider
+import com.byteutility.dev.leetcode.plus.domain.model.ProblemSetType
+import com.byteutility.dev.leetcode.plus.domain.model.SetMetadata
+import com.byteutility.dev.leetcode.plus.ui.common.ProblemFilterDelegate
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class AllProblemsViewModel @Inject constructor(
     private val problemsRepository: ProblemsRepository,
+    private val filterDelegate: ProblemFilterDelegate,
+    private val predefinedProblemSetMetadataProvider: PredefinedProblemSetMetadataProvider,
 ) : ViewModel() {
 
-    private val _allTags = MutableStateFlow<List<String>>(emptyList())
+    val predefinedProblemSets = predefinedProblemSetMetadataProvider.getAvailableStaticSets()
 
-    private val _selectedTags = MutableStateFlow<List<String>>(emptyList())
+    private val _selectedStaticProblemSet = MutableStateFlow<SetMetadata?>(null)
 
-    val selectedTags = _selectedTags.asStateFlow()
+    val selectedStaticProblemSet = _selectedStaticProblemSet.asStateFlow()
 
-    private val _selectedDifficulties = MutableStateFlow<List<String>>(emptyList())
+    private val _allProblemsList = _selectedStaticProblemSet
+        .flatMapLatest { set ->
+            flow {
+                var problemSet: ProblemSetType? = null
+                if (set != null) {
+                    problemSet = ProblemSetType.PredefinedProblemSet(metadata = set)
+                }
+                emit(problemsRepository.getProblems(problemSet))
+            }
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
 
-    val selectedDifficulties = _selectedDifficulties.asStateFlow()
+    val selectedTags = filterDelegate.selectedTags.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
 
-    private val _activeFilterCount = combine(
-        _selectedTags,
-        _selectedDifficulties,
-    ) { selectedTags, selectedDifficulties ->
-        selectedTags.size + selectedDifficulties.size
-    }
+    val selectedDifficulties = filterDelegate.selectedDifficulties.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
 
-    private val _allProblemsList = MutableStateFlow<List<LeetCodeProblem>>(emptyList())
+    val tags = filterDelegate.tags.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
 
-    private val _allDifficulties = MutableStateFlow<List<String>>(emptyList())
+    val difficulties = filterDelegate.difficulties.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
 
-    val activeFilterCount = _activeFilterCount.stateIn(
+    val activeFilterCount = filterDelegate.activeFilterCount.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = 0
     )
 
-    val problemsList = combine(
-        _allProblemsList,
-        _selectedTags,
-        _selectedDifficulties,
-    ) { problems, selectedTags, selectedDifficulties ->
-        problems.filter { problem ->
-            val matchesTag = selectedTags.isEmpty() || selectedTags.contains(problem.tag)
-            val matchesDifficulty =
-                selectedDifficulties.isEmpty() || selectedDifficulties.contains(problem.difficulty)
-            matchesTag && matchesDifficulty
-        }
+    val problemsList = _allProblemsList.flatMapLatest { latestProblems ->
+        filterDelegate.onProblemSetChanged(latestProblems)
+        filterDelegate.filteredProblemsList
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList()
     )
-    val tags = _allTags.asStateFlow()
-    val difficulties = _allDifficulties.asStateFlow()
-
-    init {
-        viewModelScope.launch(Dispatchers.IO) {
-            _allProblemsList.value = problemsRepository.getProblems(limit = 3000)
-            _allTags.value = _allProblemsList.value.map { it.tag }.distinct()
-            _allDifficulties.value = _allProblemsList.value.map { it.difficulty }.distinct()
-        }
-    }
 
     fun onTagSelected(tag: String) {
-        if (_selectedTags.value.contains(tag)) {
-            _selectedTags.value = _selectedTags.value.filter { it != tag }
-        } else {
-            _selectedTags.value += tag
-        }
+        filterDelegate.onTagSelected(tag)
     }
 
     fun onDifficultySelected(difficulty: String) {
-        if (_selectedDifficulties.value.contains(difficulty)) {
-            _selectedDifficulties.value = _selectedDifficulties.value.filter { it != difficulty }
-        } else {
-            _selectedDifficulties.value += difficulty
-        }
+        filterDelegate.onDifficultySelected(difficulty)
     }
 
     fun clearFilters() {
-        _selectedTags.value = emptyList()
-        _selectedDifficulties.value = emptyList()
+        filterDelegate.clearFilters()
+    }
+
+    fun onSearchQueryChanged(query: String) {
+        filterDelegate.onSearchQueryChanged(query)
+    }
+
+    fun onProblemSetSelected(setMetadata: SetMetadata) {
+        if (_selectedStaticProblemSet.value == setMetadata) {
+            _selectedStaticProblemSet.value = null
+            return
+        }
+        _selectedStaticProblemSet.value = setMetadata
     }
 }
