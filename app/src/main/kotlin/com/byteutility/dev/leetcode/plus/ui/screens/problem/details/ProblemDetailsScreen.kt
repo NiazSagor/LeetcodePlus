@@ -8,7 +8,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -45,7 +44,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -55,7 +53,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.font.FontWeight.Companion.Bold
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -78,10 +83,6 @@ fun ProblemDetailsScreen(
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
     var showDialog by remember { mutableStateOf(false) }
-
-    LaunchedEffect(Unit) {
-        viewModel.getQuestionDetails(titleSlug)
-    }
 
     Scaffold(
         topBar = {
@@ -128,7 +129,7 @@ fun ProblemDetailsScreen(
                         enabled = uiState.codeSnippets.isNotEmpty(),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF498A5C) // Your Emerald Green
+                            containerColor = Color(0xFF498A5C)
                         )
                     ) {
                         Text(
@@ -189,7 +190,8 @@ fun ProblemDetailsScreen(
             ProblemDetailsContent(
                 modifier = Modifier.padding(paddingValues),
                 uiState = uiState,
-                onLeetcodeLoginVerify
+                onLeetcodeLoginVerify,
+                onBack
             )
         }
     }
@@ -199,7 +201,8 @@ fun ProblemDetailsScreen(
 fun ProblemDetailsContent(
     modifier: Modifier,
     uiState: ProblemDetailsUiState,
-    onLeetcodeLoginVerify: () -> Unit
+    onLeetcodeLoginVerify: () -> Unit,
+    onBack: () -> Unit
 ) {
     val textColor = MaterialTheme.colorScheme.onSurface
     Column(
@@ -207,14 +210,61 @@ fun ProblemDetailsContent(
             .fillMaxSize()
             .padding(start = 16.dp, end = 16.dp, bottom = 0.dp)
     ) {
-        ProblemHeader(uiState)
-        ConnectionVerifyBanner { onLeetcodeLoginVerify() }
-        ProblemDescriptionWebView(uiState, textColor)
+        if (uiState.isPremiumContent) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                val premiumText = buildAnnotatedString {
+                    append("This problem is part of LeetCode Premium. Subscribe on ")
+                    val link = LinkAnnotation.Url(
+                        "https://leetcode.com/subscribe/?ref=lp_pl&source=qd",
+                        styles = TextLinkStyles(
+                            style = SpanStyle(
+                                color = MaterialTheme.colorScheme.primary,
+                                textDecoration = TextDecoration.Underline,
+                                fontWeight = Bold
+                            )
+                        )
+                    )
+                    pushLink(link)
+                    append("LeetCode")
+                    pop()
+                    append(" to unlock access and start solving.")
+                }
+
+                Text(
+                    text = premiumText,
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        color = MaterialTheme.colorScheme.onSurface
+                    ),
+                    textAlign = TextAlign.Center
+                )
+
+                Button(
+                    onClick = {
+                        onBack()
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp),
+                ) {
+                    Text(text = "Back to All Problems")
+                }
+            }
+        } else {
+            ProblemHeader(uiState)
+            ConnectionVerifyBanner { onLeetcodeLoginVerify() }
+            ProblemDescriptionWebView(uiState, textColor)
+        }
     }
 }
 
 @Composable
-private fun ColumnScope.ProblemDescriptionWebView(
+private fun ProblemDescriptionWebView(
     uiState: ProblemDetailsUiState,
     textColor: Color
 ) {
@@ -228,7 +278,7 @@ private fun ColumnScope.ProblemDescriptionWebView(
             factory = { context ->
                 WebView(context).apply {
                     settings.apply {
-                        javaScriptEnabled = false // Keep it safe unless you need interactivity
+                        javaScriptEnabled = false
                         loadWithOverviewMode = true
                         useWideViewPort = true
                         layoutAlgorithm = WebSettings.LayoutAlgorithm.TEXT_AUTOSIZING
@@ -239,7 +289,7 @@ private fun ColumnScope.ProblemDescriptionWebView(
             update = { webView ->
                 val styledHtml = getStyledHtml(uiState.content, textColor)
                 webView.loadDataWithBaseURL(
-                    "https://leetcode.com", // Providing a base URL helps with relative links/images
+                    "https://leetcode.com",
                     styledHtml,
                     "text/html",
                     "UTF-8",
@@ -272,7 +322,7 @@ fun ConnectionVerifyBanner(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
-                    imageVector = Icons.Default.VpnKey, // Or Icons.Default.Link
+                    imageVector = Icons.Default.VpnKey,
                     contentDescription = null,
                     tint = brandGreen,
                     modifier = Modifier.size(18.dp)
@@ -380,7 +430,7 @@ fun LanguageSelectionSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 32.dp) // Extra padding for navigation bar
+                .padding(bottom = 32.dp)
         ) {
             Text(
                 text = "Select Language",
@@ -405,7 +455,6 @@ fun LanguageSelectionSheet(
                             color = MaterialTheme.colorScheme.onSurface
                         )
 
-                        // Subtle indicator for the Emerald theme
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                             contentDescription = null,
@@ -524,7 +573,9 @@ fun ProblemDetailsScreenPreview() {
             ProblemDetailsContent(
                 modifier = Modifier.padding(paddingValues),
                 uiState = mockUiState,
-            ) {}
+                onLeetcodeLoginVerify = {},
+                onBack = {}
+            )
         }
     }
 }
