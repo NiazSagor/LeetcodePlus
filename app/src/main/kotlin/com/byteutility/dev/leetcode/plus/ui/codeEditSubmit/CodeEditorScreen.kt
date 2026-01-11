@@ -62,6 +62,12 @@ fun CodeEditorScreen(
     var currentCode by remember { mutableStateOf(initialCode) }
     val emeraldGreen = Color(0xFF498A5C)
     var editor: CodeEditor? by remember { mutableStateOf(null) }
+    val updateStates = {
+        viewModel.refreshUndoRedoStates(
+            canUndo = editor?.canUndo() ?: false,
+            canRedo = editor?.canRedo() ?: false
+        )
+    }
 
     OnLifecycleEvent { _, event ->
         if (event == Lifecycle.Event.ON_STOP) {
@@ -81,10 +87,7 @@ fun CodeEditorScreen(
                         onClick = {
                             editor?.setText(initialCode)
                             editor?.setSelection(0, 0)
-                            viewModel.refreshUndoRedoStates(
-                                canUndo = editor?.canUndo() ?: false,
-                                canRedo = editor?.canRedo() ?: false
-                            )
+                            updateStates()
                         },
                     ) {
                         Icon(Icons.Default.RestartAlt, contentDescription = "Reset")
@@ -159,16 +162,10 @@ fun CodeEditorScreen(
                 canRedo = canRedo,
                 undo = {
                     editor?.undo()
-                    viewModel.refreshUndoRedoStates(
-                        canUndo = editor?.canUndo() ?: false,
-                        canRedo = editor?.canRedo() ?: false
-                    )
+                    updateStates()
                 }, redo = {
                     editor?.redo()
-                    viewModel.refreshUndoRedoStates(
-                        canUndo = editor?.canUndo() ?: false,
-                        canRedo = editor?.canRedo() ?: false
-                    )
+                    updateStates()
                 })
             SoraCodeEditor(
                 code = currentCode,
@@ -178,10 +175,7 @@ fun CodeEditorScreen(
                 },
                 onCodeChange = {
                     currentCode = it
-                    viewModel.refreshUndoRedoStates(
-                        canUndo = editor?.canUndo() ?: false,
-                        canRedo = editor?.canRedo() ?: false
-                    )
+                    updateStates()
                 }
             )
         }
