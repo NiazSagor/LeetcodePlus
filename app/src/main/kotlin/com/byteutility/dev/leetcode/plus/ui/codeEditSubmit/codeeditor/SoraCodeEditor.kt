@@ -9,7 +9,6 @@ import io.github.rosemoe.sora.widget.CodeEditor
 @Composable
 fun SoraCodeEditor(
     code: String,
-    language: String,
     modifier: Modifier = Modifier,
     onCodeChange: (String) -> Unit,
     onEditorLoaded: (CodeEditor) -> Unit
@@ -19,7 +18,12 @@ fun SoraCodeEditor(
         factory = { context ->
             CodeEditor(context).apply {
                 onEditorLoaded(this)
+                setUndoEnabled(true)
                 subscribeAlways(io.github.rosemoe.sora.event.ContentChangeEvent::class.java) {
+                    onCodeChange(text.toString())
+                }
+
+                subscribeAlways(io.github.rosemoe.sora.event.SelectionChangeEvent::class.java) {
                     onCodeChange(text.toString())
                 }
             }
@@ -28,6 +32,7 @@ fun SoraCodeEditor(
             // Only update text if it's actually different to avoid cursor reset
             if (view.text.toString() != code) {
                 view.setText(code)
+                onCodeChange(code)
             }
         }
     )

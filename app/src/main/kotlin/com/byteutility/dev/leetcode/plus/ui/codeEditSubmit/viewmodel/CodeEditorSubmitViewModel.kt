@@ -31,6 +31,20 @@ class CodeEditorSubmitViewModel @Inject constructor(
     private val _uiEvent: MutableSharedFlow<CodeEditorSubmitUIEvent?> = MutableSharedFlow()
     val uiEvent = _uiEvent.asSharedFlow()
 
+    private val _canUndo = MutableStateFlow(false)
+    val canUndo: StateFlow<Boolean> = _canUndo
+
+    private val _canRedo = MutableStateFlow(false)
+    val canRedo: StateFlow<Boolean> = _canRedo
+
+    fun refreshUndoRedoStates(
+        canUndo: Boolean,
+        canRedo: Boolean
+    ) {
+        _canUndo.value = canUndo
+        _canRedo.value = canRedo
+    }
+
     suspend fun getSavedCode(questionId: String, language: String): String? {
         return codeHistoryDataStore.getCode(questionId, language)
     }

@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -38,6 +39,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.byteutility.dev.leetcode.plus.ui.codeEditSubmit.codeeditor.SoraCodeEditor
 import com.byteutility.dev.leetcode.plus.ui.codeEditSubmit.codeeditor.SymbolShortcutBar
 import com.byteutility.dev.leetcode.plus.ui.codeEditSubmit.config.EditorLanguageHelper
@@ -55,9 +57,17 @@ fun CodeEditorScreen(
     questionId: String?,
     onBack: () -> Unit,
 ) {
+    val canUndo by viewModel.canUndo.collectAsStateWithLifecycle()
+    val canRedo by viewModel.canRedo.collectAsStateWithLifecycle()
     var currentCode by remember { mutableStateOf(initialCode) }
     val emeraldGreen = Color(0xFF498A5C)
     var editor: CodeEditor? by remember { mutableStateOf(null) }
+    val updateStates = {
+        viewModel.refreshUndoRedoStates(
+            canUndo = editor?.canUndo() ?: false,
+            canRedo = editor?.canRedo() ?: false
+        )
+    }
 
     OnLifecycleEvent { _, event ->
         if (event == Lifecycle.Event.ON_STOP) {
@@ -72,6 +82,17 @@ fun CodeEditorScreen(
     Scaffold(
         topBar = {
             TopAppBar(
+                actions = {
+                    IconButton(
+                        onClick = {
+                            editor?.setText(initialCode)
+                            editor?.setSelection(0, 0)
+                            updateStates()
+                        },
+                    ) {
+                        Icon(Icons.Default.RestartAlt, contentDescription = "Reset")
+                    }
+                },
                 title = {
                     Column {
                         Text(title, style = MaterialTheme.typography.titleMedium)
@@ -133,17 +154,29 @@ fun CodeEditorScreen(
         }
     ) { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding)) {
-            SymbolShortcutBar(onSymbolClick = { symbol ->
-                editor?.insertText(symbol, 1)
-            })
+            SymbolShortcutBar(
+                onSymbolClick = { symbol ->
+                    editor?.insertText(symbol, 1)
+                },
+                canUndo = canUndo,
+                canRedo = canRedo,
+                undo = {
+                    editor?.undo()
+                    updateStates()
+                }, redo = {
+                    editor?.redo()
+                    updateStates()
+                })
             SoraCodeEditor(
                 code = currentCode,
-                language = language,
                 onEditorLoaded = { loadedEditor ->
                     editor = loadedEditor
                     configureEditorLanguage(loadedEditor, language)
                 },
-                onCodeChange = { currentCode = it }
+                onCodeChange = {
+                    currentCode = it
+                    updateStates()
+                }
             )
         }
     }
