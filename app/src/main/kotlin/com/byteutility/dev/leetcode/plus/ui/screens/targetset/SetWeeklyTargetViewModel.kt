@@ -12,6 +12,7 @@ import com.byteutility.dev.leetcode.plus.data.worker.ClearGoalWorker
 import com.byteutility.dev.leetcode.plus.domain.model.ProblemSetType
 import com.byteutility.dev.leetcode.plus.domain.model.SetMetadata
 import com.byteutility.dev.leetcode.plus.ui.common.ProblemFilterDelegate
+import com.byteutility.dev.leetcode.plus.ui.common.ProblemFilterDelegateInterface
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -37,7 +38,7 @@ class SetWeeklyTargetViewModel @Inject constructor(
     private val weeklyGoalRepository: WeeklyGoalRepository,
     private val predefinedProblemSetMetadataProvider: PredefinedProblemSetMetadataProvider,
     private val filterDelegate: ProblemFilterDelegate,
-) : ViewModel() {
+) : ViewModel(), ProblemFilterDelegateInterface by filterDelegate {
 
     private val _popCurrentDestination = MutableSharedFlow<Unit>()
     val popCurrentDestination = _popCurrentDestination.asSharedFlow()
@@ -66,36 +67,6 @@ class SetWeeklyTargetViewModel @Inject constructor(
             initialValue = emptyList()
         )
 
-    val selectedTags = filterDelegate.selectedTags.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = emptyList()
-    )
-
-    val selectedDifficulties = filterDelegate.selectedDifficulties.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = emptyList()
-    )
-
-    val tags = filterDelegate.tags.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = emptyList()
-    )
-
-    val difficulties = filterDelegate.difficulties.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = emptyList()
-    )
-
-    val activeFilterCount = filterDelegate.activeFilterCount.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = 0
-    )
-
     val problemsList = _allProblemsList.flatMapLatest { latestProblems ->
         filterDelegate.onProblemSetChanged(latestProblems)
         filterDelegate.filteredProblemsList
@@ -104,22 +75,6 @@ class SetWeeklyTargetViewModel @Inject constructor(
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList()
     )
-
-    fun onTagSelected(tag: String) {
-        filterDelegate.onTagSelected(tag)
-    }
-
-    fun onDifficultySelected(difficulty: String) {
-        filterDelegate.onDifficultySelected(difficulty)
-    }
-
-    fun clearFilters() {
-        filterDelegate.clearFilters()
-    }
-
-    fun onSearchQueryChanged(query: String) {
-        filterDelegate.onSearchQueryChanged(query)
-    }
 
     fun onProblemSetSelected(setMetadata: SetMetadata) {
         if (_selectedStaticProblemSet.value == setMetadata) {

@@ -63,12 +63,12 @@ fun SetWeeklyTargetScreen(
     val viewModel: SetWeeklyTargetViewModel = hiltViewModel()
     val problems by viewModel.problemsList.collectAsStateWithLifecycle()
     val selectedProblems by viewModel.selectedProblems.collectAsStateWithLifecycle()
-    val tags by viewModel.tags.collectAsStateWithLifecycle()
-    val difficulties by viewModel.difficulties.collectAsStateWithLifecycle()
+    val tags by viewModel.tags.collectAsStateWithLifecycle(initialValue = emptyList())
+    val difficulties by viewModel.difficulties.collectAsStateWithLifecycle(initialValue = emptyList())
     val selectedDifficulties by viewModel.selectedDifficulties.collectAsStateWithLifecycle()
     val selectedTags by viewModel.selectedTags.collectAsStateWithLifecycle()
     var showFilterBottomSheet by remember { mutableStateOf(false) }
-    val activeFilterCount by viewModel.activeFilterCount.collectAsStateWithLifecycle()
+    val activeFilterCount by viewModel.activeFilterCount.collectAsStateWithLifecycle(initialValue = 0)
     val selectedStaticProblemSet by viewModel.selectedStaticProblemSet.collectAsStateWithLifecycle()
     val predefinedProblemSet = viewModel.predefinedProblemSets
 
