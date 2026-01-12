@@ -61,11 +61,7 @@ class SetWeeklyTargetViewModel @Inject constructor(
                 }
                 emit(problemsRepository.getProblems(problemSet))
             }
-        }.stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
-        )
+        }
 
     val problemsList = _allProblemsList.flatMapLatest { latestProblems ->
         filterDelegate.onProblemSetChanged(latestProblems)
