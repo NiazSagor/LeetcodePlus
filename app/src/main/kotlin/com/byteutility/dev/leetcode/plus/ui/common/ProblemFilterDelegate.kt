@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class ProblemFilterDelegate {
+class ProblemFilterDelegate : ProblemFilterDelegateInterface {
 
     private val _searchQuery = MutableStateFlow("")
 
@@ -16,25 +16,25 @@ class ProblemFilterDelegate {
     private val _selectedTags = MutableStateFlow<List<String>>(emptyList())
     private val _selectedDifficulties = MutableStateFlow<List<String>>(emptyList())
 
-    val selectedTags = _selectedTags
-    val selectedDifficulties = _selectedDifficulties
+    override val selectedTags = _selectedTags
+    override val selectedDifficulties = _selectedDifficulties
 
-    val tags = allProblemsList.map { list ->
+    override val tags = allProblemsList.map { list ->
         list.map { it.tag }.distinct()
     }
 
-    val difficulties = allProblemsList.map { list ->
+    override val difficulties = allProblemsList.map { list ->
         list.map { it.difficulty }.distinct()
     }
 
-    val activeFilterCount = combine(
+    override val activeFilterCount = combine(
         _selectedTags,
         _selectedDifficulties,
     ) { selectedTags, selectedDifficulties ->
         selectedTags.size + selectedDifficulties.size
     }
 
-    val filteredProblemsList = combine(
+    override val filteredProblemsList = combine(
         allProblemsList,
         _searchQuery,
         _selectedTags,
@@ -49,11 +49,11 @@ class ProblemFilterDelegate {
         }
     }
 
-    fun onProblemSetChanged(newList: List<LeetCodeProblem>) {
+    override fun onProblemSetChanged(newList: List<LeetCodeProblem>) {
         allProblemsList.value = newList
     }
 
-    fun onTagSelected(tag: String) {
+    override fun onTagSelected(tag: String) {
         if (_selectedTags.value.contains(tag)) {
             _selectedTags.value = _selectedTags.value.filter { it != tag }
         } else {
@@ -61,7 +61,7 @@ class ProblemFilterDelegate {
         }
     }
 
-    fun onDifficultySelected(difficulty: String) {
+    override fun onDifficultySelected(difficulty: String) {
         if (_selectedDifficulties.value.contains(difficulty)) {
             _selectedDifficulties.value = _selectedDifficulties.value.filter { it != difficulty }
         } else {
@@ -69,12 +69,12 @@ class ProblemFilterDelegate {
         }
     }
 
-    fun clearFilters() {
+    override fun clearFilters() {
         _selectedTags.value = emptyList()
         _selectedDifficulties.value = emptyList()
     }
 
-    fun onSearchQueryChanged(query: String) {
+    override fun onSearchQueryChanged(query: String) {
         _searchQuery.value = query
     }
 }
