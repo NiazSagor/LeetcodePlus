@@ -183,12 +183,7 @@ fun ProblemSelection(
     onSearchQueryChange: (String) -> Unit,
     onProblemSelected: (LeetCodeProblem, Boolean) -> Unit
 ) {
-//    var currentPage by remember { mutableIntStateOf(0) }
     var searchText by remember { mutableStateOf("") }
-
-//    val itemsPerPage = 20
-//    val totalPages = (problems.size + itemsPerPage - 1) / itemsPerPage
-//    val displayedItems = problems.drop(currentPage * itemsPerPage).take(itemsPerPage)
 
     Column(
         modifier = Modifier
