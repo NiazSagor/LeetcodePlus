@@ -22,13 +22,18 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 // TODO Remove context injection from viewmodel, rather triggering all workers from a single class approach
+
+private const val PROBLEMS_PER_PAGE = 20
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -39,6 +44,9 @@ class SetWeeklyTargetViewModel @Inject constructor(
     private val predefinedProblemSetMetadataProvider: PredefinedProblemSetMetadataProvider,
     private val filterDelegate: ProblemFilterDelegate,
 ) : ViewModel(), ProblemFilterDelegateInterface by filterDelegate {
+
+    private val _currentPage = MutableStateFlow(0)
+    val currentPage = _currentPage.asStateFlow()
 
     private val _popCurrentDestination = MutableSharedFlow<Unit>()
     val popCurrentDestination = _popCurrentDestination.asSharedFlow()
@@ -54,23 +62,41 @@ class SetWeeklyTargetViewModel @Inject constructor(
 
     private val _allProblemsList = _selectedStaticProblemSet
         .flatMapLatest { set ->
-            flow {
-                var problemSet: ProblemSetType? = null
-                if (set != null) {
-                    problemSet = ProblemSetType.PredefinedProblemSet(metadata = set)
-                }
-                emit(problemsRepository.getProblems(problemSet))
-            }
+            val problemSet = set?.let { ProblemSetType.PredefinedProblemSet(metadata = it) }
+            flowOf(problemsRepository.getProblems(problemSet))
         }
 
-    val problemsList = _allProblemsList.flatMapLatest { latestProblems ->
-        filterDelegate.onProblemSetChanged(latestProblems)
-        filterDelegate.filteredProblemsList
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = emptyList()
-    )
+    private val sharedFilteredList = _allProblemsList
+        .flatMapLatest { latestProblems ->
+            filterDelegate.onProblemSetChanged(latestProblems)
+            filterDelegate.filteredProblemsList
+        }
+        .shareIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            replay = 1
+        )
+
+    val totalPages = sharedFilteredList.map { problems ->
+        (problems.size + PROBLEMS_PER_PAGE - 1) / PROBLEMS_PER_PAGE
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1)
+
+    val problemsList = sharedFilteredList
+        .combine(_currentPage) { problems, currentPage ->
+            val safePage = if (currentPage * PROBLEMS_PER_PAGE >= problems.size) 0 else currentPage
+            problems.drop(safePage * PROBLEMS_PER_PAGE).take(PROBLEMS_PER_PAGE)
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    init {
+        viewModelScope.launch {
+            totalPages.collect { maxPages ->
+                if (_currentPage.value >= maxPages && maxPages > 0) {
+                    _currentPage.value = 0
+                }
+            }
+        }
+    }
 
     fun onProblemSetSelected(setMetadata: SetMetadata) {
         if (_selectedStaticProblemSet.value == setMetadata) {
@@ -101,5 +127,9 @@ class SetWeeklyTargetViewModel @Inject constructor(
             // Clear job to work manager so that it clears storage after a week
             ClearGoalWorker.enqueueWork(context)
         }
+    }
+
+    fun changePage(page: Int) {
+        _currentPage.value = page
     }
 }

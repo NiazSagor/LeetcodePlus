@@ -35,7 +35,6 @@ import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -62,6 +61,8 @@ fun SetWeeklyTargetScreen(
 ) {
     val viewModel: SetWeeklyTargetViewModel = hiltViewModel()
     val problems by viewModel.problemsList.collectAsStateWithLifecycle()
+    val totalPage by viewModel.totalPages.collectAsStateWithLifecycle()
+    val currentPage by viewModel.currentPage.collectAsStateWithLifecycle()
     val selectedProblems by viewModel.selectedProblems.collectAsStateWithLifecycle()
     val tags by viewModel.tags.collectAsStateWithLifecycle(initialValue = emptyList())
     val difficulties by viewModel.difficulties.collectAsStateWithLifecycle(initialValue = emptyList())
@@ -147,7 +148,8 @@ fun SetWeeklyTargetScreen(
         ProblemSelection(
             selectedProblems = selectedProblems,
             modifier = Modifier.padding(innerPadding),
-            problems = problems, {
+            problems = problems,
+            onConfirm = {
                 Log.i("SetWeeklyTargetScreen", "Problems selected for week")
                 needToShowConfirmDialog = true
             },
@@ -155,7 +157,10 @@ fun SetWeeklyTargetScreen(
             onProblemSelected = { problem, selected ->
                 viewModel.onProblemSelected(problem, selected)
             },
-            onSearchQueryChange = { viewModel.onSearchQueryChanged(it) }
+            onSearchQueryChange = { viewModel.onSearchQueryChanged(it) },
+            totalPages = totalPage,
+            currentPage = currentPage,
+            onPageChange = viewModel::changePage,
         )
         if (needToShowConfirmDialog) {
             WeeklyGoalSetDialog { period ->
@@ -170,17 +175,15 @@ fun ProblemSelection(
     selectedProblems: List<LeetCodeProblem>,
     modifier: Modifier = Modifier,
     problems: List<LeetCodeProblem>,
+    totalPages: Int,
+    currentPage: Int,
+    onPageChange: (Int) -> Unit,
     onConfirm: (List<LeetCodeProblem>) -> Unit,
     onNavigateToProblemDetails: (String) -> Unit = {},
     onSearchQueryChange: (String) -> Unit,
     onProblemSelected: (LeetCodeProblem, Boolean) -> Unit
 ) {
-    var currentPage by remember { mutableIntStateOf(0) }
     var searchText by remember { mutableStateOf("") }
-
-    val itemsPerPage = 20
-    val totalPages = (problems.size + itemsPerPage - 1) / itemsPerPage
-    val displayedItems = problems.drop(currentPage * itemsPerPage).take(itemsPerPage)
 
     Column(
         modifier = Modifier
@@ -205,7 +208,7 @@ fun ProblemSelection(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             contentPadding = PaddingValues(top = 16.dp, bottom = 16.dp)
         ) {
-            items(displayedItems) { problem ->
+            items(problems) { problem ->
                 ProblemItem(
                     problem = problem,
                     onNavigateToProblemDetails = onNavigateToProblemDetails,
@@ -232,7 +235,7 @@ fun ProblemSelection(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Button(
-                onClick = { if (currentPage > 0) currentPage-- },
+                onClick = { if (currentPage > 0) onPageChange(currentPage - 1) },
                 enabled = currentPage > 0
             ) {
                 Text("Previous")
@@ -241,7 +244,7 @@ fun ProblemSelection(
             Text("Page ${currentPage + 1} of $totalPages")
 
             Button(
-                onClick = { if (currentPage < totalPages - 1) currentPage++ },
+                onClick = { if (currentPage < totalPages - 1) onPageChange(currentPage + 1) },
                 enabled = currentPage < totalPages - 1
             ) {
                 Text("Next")
@@ -317,10 +320,13 @@ fun ProblemSelectionPreview() {
             problems,
             Modifier.padding(innerPadding),
             problems = problems,
-            {},
+            onConfirm = {},
             onNavigateToProblemDetails = {},
             onProblemSelected = { _, _ -> },
-            onSearchQueryChange = {}
+            onSearchQueryChange = {},
+            totalPages = 1,
+            currentPage = 0,
+            onPageChange = {}
         )
     }
 }
