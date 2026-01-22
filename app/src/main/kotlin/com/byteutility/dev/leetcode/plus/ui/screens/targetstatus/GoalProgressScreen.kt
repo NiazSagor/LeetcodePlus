@@ -1,8 +1,6 @@
 package com.byteutility.dev.leetcode.plus.ui.screens.targetstatus
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,6 +8,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -18,17 +17,25 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.History
+import androidx.compose.material.icons.rounded.PlayCircle
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -37,10 +44,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -50,11 +55,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.byteutility.dev.leetcode.plus.R
 import com.byteutility.dev.leetcode.plus.data.model.ProblemStatus
 import com.byteutility.dev.leetcode.plus.data.model.WeeklyGoalPeriod
-import com.byteutility.dev.leetcode.plus.ui.common.AdBannerAdaptive
-import com.byteutility.dev.leetcode.plus.ui.common.done
 import com.byteutility.dev.leetcode.plus.ui.dialogs.WeeklyGoalResetDialog
 import com.byteutility.dev.leetcode.plus.ui.model.ProgressUiState
 
@@ -103,12 +105,24 @@ fun ProgressScreenContent(
         modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = { Text(text = "My Progress") },
+                title = {
+                    Text(
+                        text = "My Progress", style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                },
                 actions = {
                     TextButton(
-                        onClick = onResetGoal, modifier = Modifier.padding(16.dp),
-                        content = { Text("Reset") }
-                    )
+                        onClick = onResetGoal,
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error // Visual cue for a destructive action
+                        )
+                    ) {
+                        Text(
+                            text = "Reset Goal",
+                            style = MaterialTheme.typography.labelLarge
+                        )
+                    }
                 },
                 navigationIcon = {
                     IconButton(
@@ -118,9 +132,7 @@ fun ProgressScreenContent(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFFABDEF5).copy(
-                        alpha = 0.1f
-                    )
+                    containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
                 )
             )
         },
@@ -164,7 +176,7 @@ fun ProgressScreenContent(
                     )
                 }
             }
-            AdBannerAdaptive(modifier = Modifier.fillMaxWidth())
+            // AdBannerAdaptive(modifier = Modifier.fillMaxWidth())
         }
     }
 }
@@ -174,105 +186,141 @@ fun ProblemCard(
     problemStatus: ProblemStatus,
     onNavigateToProblemDetails: (String) -> Unit
 ) {
-    val backgroundColor = when (problemStatus.status) {
-        "Completed" -> Color(0xFFE8F5E9)
-        "In Progress" -> Color(0xFFFFF8E1)
-        else -> Color(0xFFF3E5F5)
+    // Define M3-compliant colors based on the theme palette
+    val themeData = when (problemStatus.status) {
+        "Completed" -> Triple(
+            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
+            MaterialTheme.colorScheme.primary,
+            Icons.Rounded.CheckCircle
+        )
+
+        "In Progress" -> Triple(
+            MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.4f),
+            MaterialTheme.colorScheme.tertiary,
+            Icons.Rounded.History
+        )
+
+        else -> Triple(
+            MaterialTheme.colorScheme.surfaceVariant,
+            MaterialTheme.colorScheme.onSurfaceVariant,
+            Icons.Rounded.PlayCircle
+        )
     }
 
-    val statusColor = when (problemStatus.status) {
-        "Completed" -> Color(0xFF4CAF50)
-        "In Progress" -> Color(0xFFFFA000)
-        else -> Color(0xFF9C27B0)
-    }
-
+    // Using FilledCard or OutlinedCard is standard for lists
     Card(
         modifier = Modifier
-            .fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = backgroundColor
-        ),
-        shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        onClick = { onNavigateToProblemDetails(problemStatus.titleSlug) },
+        colors = CardDefaults.cardColors(containerColor = themeData.first),
+        shape = MaterialTheme.shapes.medium,
+        // Lower elevation looks more modern and less "floating"
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
-        Row(
-            modifier = Modifier
-                .clickable {
-                    onNavigateToProblemDetails.invoke(problemStatus.titleSlug)
-                }
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth(0.8f),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
+        ListItem(
+            modifier = Modifier.background(Color.Transparent),
+            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+            headlineContent = {
                 Text(
                     text = problemStatus.title,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurface
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
                 )
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
+            },
+            supportingContent = {
+                Column(modifier = Modifier.padding(top = 4.dp)) {
+                    // Status Badge
                     Text(
-                        text = "Status: ${problemStatus.status}",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = statusColor
+                        text = problemStatus.status,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = themeData.second,
+                        fontWeight = FontWeight.SemiBold
                     )
+                    // Attempts count with subtle text
                     Text(
-                        text = "Attempts Count: ${problemStatus.attemptsCount}",
-                        style = MaterialTheme.typography.titleSmall,
-                        color = Color.DarkGray
+                        text = "Attempts: ${problemStatus.attemptsCount}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-            }
-
-            if (problemStatus.status == "In Progress" || problemStatus.status == "Not Started") {
-                Image(
-                    modifier = Modifier
-                        .size(38.dp),
-                    painter = painterResource(R.drawable.baseline_pending_24),
+            },
+            trailingContent = {
+                // Large status icon for visual confirmation
+                Icon(
+                    imageVector = themeData.third,
                     contentDescription = null,
-                    colorFilter = ColorFilter.tint(statusColor)
+                    modifier = Modifier.size(28.dp),
+                    tint = themeData.second
                 )
-            } else {
-                Box(
-                    modifier = Modifier
-                        .size(32.dp)
-                        .background(Color(0xFF4CAF50), shape = CircleShape)
-                        .clip(CircleShape)
-                ) {
-                    Image(
-                        modifier = Modifier
-                            .size(32.dp)
-                            .align(Alignment.Center),
-                        imageVector = done,
-                        contentDescription = null,
-                        colorFilter = ColorFilter.tint(Color.White)
-                    )
-                }
             }
-        }
+        )
     }
 }
 
 @Composable
 fun DateRow(startDate: String, endDate: String) {
-    Row(
+    Surface(
         modifier = Modifier
-            .padding(16.dp)
-            .fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+        shape = RoundedCornerShape(16.dp)
     ) {
-        DateItem(label = "Start Date", date = startDate)
-        DateItem(label = "End Date", date = endDate)
+        Row(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // Start Date
+            DateItem(label = "Starts", date = startDate, alignment = Alignment.Start)
+
+            // Timeline Connector
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(2.dp)
+                    .background(
+                        brush = Brush.horizontalGradient(
+                            colors = listOf(
+                                MaterialTheme.colorScheme.primary,
+                                MaterialTheme.colorScheme.outlineVariant
+                            )
+                        ),
+                        shape = CircleShape
+                    )
+            )
+
+            // End Date
+            DateItem(label = "Ends", date = endDate, alignment = Alignment.End)
+        }
+    }
+}
+
+@Composable
+private fun DateItem(
+    label: String,
+    date: String,
+    alignment: Alignment.Horizontal
+) {
+    Column(horizontalAlignment = alignment) {
+        Text(
+            text = label.uppercase(),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.primary,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 1.sp
+        )
+        Text(
+            text = date,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+            fontWeight = FontWeight.Medium
+        )
     }
 }
 

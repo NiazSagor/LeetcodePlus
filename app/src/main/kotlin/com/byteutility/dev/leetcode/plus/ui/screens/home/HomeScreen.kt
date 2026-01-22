@@ -50,10 +50,14 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TooltipBox
@@ -78,6 +82,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -793,40 +798,42 @@ fun SubmissionItem(
     submission: UserSubmission,
     onClick: () -> Unit = {}
 ) {
-    Card(
+    OutlinedCard(
+        onClick = onClick,
         modifier = Modifier
-            .padding(horizontal = 8.dp)
             .fillMaxWidth()
-            .clickable { onClick() },
+            .padding(horizontal = 8.dp),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+        colors = CardDefaults.outlinedCardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        border = CardDefaults.outlinedCardBorder().copy(
+            brush = SolidColor(MaterialTheme.colorScheme.outlineVariant)
+        )
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(
-                text = "Title: ${submission.title}",
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = Color(0xFF323232)
-            )
-            Text(
-                text = "Date: ${submission.timestamp}",
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color(0xFF757575)
-            )
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
+        ListItem(
+            headlineContent = {
                 Text(
-                    text = "Language: ${submission.lang}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color(0xFF323232)
+                    text = submission.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
                 )
-            }
-        }
+            },
+            supportingContent = {
+                Column {
+                    Text(
+                        text = "Submitted: ${submission.timestamp}",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    SuggestionChip(
+                        onClick = { /* No-op or filter by lang */ },
+                        label = { Text(submission.lang) },
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+            },
+            colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+        )
     }
 }
 
